@@ -1,28 +1,8 @@
-# Core FastAPI and web framework
 fastapi==0.104.1
-uvicorn[standard]==0.24.0
-jinja2==3.1.2
-
-# Database
-sqlalchemy==2.0.23
-
-# AI and ML
+uvicorn==0.24.0
 google-generativeai==0.8.5
-
-# External APIs
-tavily-python==0.7.12
-requests==2.31.0
-
-# Environment and configuration
+sqlalchemy==2.0.43
 python-dotenv==1.0.0
-
-# Data validation and serialization
 pydantic==2.11.9
-
-# HTTP client for external APIs
+jinja2==3.1.2
 httpx==0.28.1
-
-# Additional utilities
-typing-extensions==4.15.0
-
-Update requirements.txt to include [some new packages you think are important for the project]
