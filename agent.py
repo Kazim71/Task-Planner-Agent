@@ -1,3 +1,66 @@
+from typing import Dict, List, Any, Optional
+def fix_json_response(json_string: str) -> Dict[str, Any]:
+    """
+    Attempt to fix common JSON formatting issues in AI responses.
+    Handles trailing commas, missing quotes, single quotes, markdown code blocks, and unescaped quotes.
+    Tries multiple fix strategies recursively.
+    """
+    def _strip_markdown(text: str) -> str:
+        # Remove all code block markers and leading/trailing whitespace
+        text = re.sub(r'^```[a-zA-Z]*', '', text.strip(), flags=re.MULTILINE)
+        text = re.sub(r'```$', '', text, flags=re.MULTILINE)
+        text = re.sub(r'^\s*\n', '', text)
+        return text.strip()
+
+    def _fix_quotes(text: str) -> str:
+        # Replace single quotes with double quotes, but not in numbers or true/false/null
+        text = re.sub(r"'([^']*?)'", r'"\1"', text)
+        # Escape unescaped double quotes inside values
+        text = re.sub(r':\s*"([^"]*?)"([,}\]])', lambda m: ': "' + m.group(1).replace('"', '\\"') + '"' + m.group(2), text)
+        return text
+
+    def _remove_trailing_commas(text: str) -> str:
+        text = re.sub(r',\s*([}\]])', r'\1', text)
+        return text
+
+    def _recursive_attempts(text: str, depth: int = 0) -> Dict[str, Any]:
+        if depth > 3:
+            raise ValueError("Unable to repair and parse JSON response after multiple attempts.")
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
+        # Try stripping markdown
+        stripped = _strip_markdown(text)
+        if stripped != text:
+            try:
+                return _recursive_attempts(stripped, depth + 1)
+            except Exception:
+                pass
+        # Try fixing quotes
+        fixed_quotes = _fix_quotes(stripped)
+        if fixed_quotes != stripped:
+            try:
+                return _recursive_attempts(fixed_quotes, depth + 1)
+            except Exception:
+                pass
+        # Try removing trailing commas
+        no_trailing = _remove_trailing_commas(fixed_quotes)
+        if no_trailing != fixed_quotes:
+            try:
+                return _recursive_attempts(no_trailing, depth + 1)
+            except Exception:
+                pass
+        # Try extracting JSON object
+        match = re.search(r'({.*})', no_trailing, re.DOTALL)
+        if match:
+            try:
+                return _recursive_attempts(match.group(1), depth + 1)
+            except Exception:
+                pass
+        raise ValueError("Unable to repair and parse JSON response.")
+
+    return _recursive_attempts(json_string)
 import os
 import json
 import google.generativeai as genai
@@ -78,6 +141,9 @@ Be specific, realistic, and actionable in your planning."""
             goal (str): The natural language goal to plan for
             start_date (Optional[str]): Start date in YYYY-MM-DD format. If None, uses today.
             
+        import re
+        import json
+        from typing import Any, Dict
         Returns:
             Dict[str, Any]: Structured plan with daily breakdown
             
@@ -94,53 +160,65 @@ Be specific, realistic, and actionable in your planning."""
         start_time = time.time()
         logger.info(f"Starting plan generation for goal: {goal[:100]}{'...' if len(goal) > 100 else ''}")
         
-        try:
-            # Create the prompt for Gemini
-            prompt = f"""
-{self.system_prompt}
-
-Goal: {goal.strip()}
-Start Date: {start_date}
-
-Please create a detailed, actionable plan for this goal. Make sure to:
-- Break it down into daily tasks
-- Consider realistic timeframes
-- Identify research topics that would be helpful
-- Note if weather information would be relevant
-- Include dependencies between tasks
-- Suggest success metrics
-
-Return only the JSON response, no additional text.
-"""
-            
-            logger.debug(f"Prompt length: {len(prompt)} characters")
-            
-            # Generate response from Gemini
-            logger.info("Sending request to Gemini API")
+        from exceptions import ExternalServiceError
+        import time as _time
+        max_attempts = 3
+        attempt = 0
+        last_exception = None
+        prompts = [
+            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
+            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nReturn only the JSON response, no additional text."""
+        ]
+        while attempt < max_attempts:
+            prompt = prompts[0] if attempt == 0 else prompts[1]
+            logger.debug(f"Prompt length: {len(prompt)} characters (attempt {attempt+1})")
+            logger.info(f"Sending request to Gemini API (attempt {attempt+1})")
             api_start_time = time.time()
-            
             try:
                 response = self.model.generate_content(prompt)
                 api_response_time = time.time() - api_start_time
-                
-                # Log external API call
                 log_external_api_call(
                     logger=logger,
                     service="Gemini",
                     endpoint="generate_content",
                     method="POST",
-                    status_code=200,  # Assume success if no exception
+                    status_code=200,
                     response_time=api_response_time,
                     request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
                 )
-                
                 logger.info(f"Received response from Gemini API in {api_response_time:.3f}s")
-                
+                if not response.text:
+                    raise Exception("Empty response from Gemini API")
+                logger.info(f"Response text length: {len(response.text)} characters")
+                logger.debug("Parsing JSON response from Gemini")
+                logger.debug(f"Raw Gemini response: {response.text}")
+                parse_attempt = 0
+                while parse_attempt < max_attempts:
+                    try:
+                        logger.info(f"JSON parsing attempt {parse_attempt+1} for Gemini response (API attempt {attempt+1})")
+                        plan_data = self._parse_json_response(response.text)
+                        logger.info("Successfully parsed plan data from Gemini response")
+                        logger.info("Enriching plan with external tools")
+                        enrichment_start = time.time()
+                        enriched_plan = self._enrich_plan_with_tools(plan_data, goal)
+                        enrichment_time = time.time() - enrichment_start
+                        logger.info(f"Plan enrichment completed in {enrichment_time:.3f}s")
+                        total_time = time.time() - start_time
+                        logger.info(f"Plan generation completed successfully in {total_time:.3f}s")
+                        logger.info(f"Generated plan with {len(enriched_plan.get('steps', []))} steps")
+                        return enriched_plan
+                    except Exception as e:
+                        logger.error(f"JSON parsing failed on parse attempt {parse_attempt+1} (API attempt {attempt+1}): {e}")
+                        last_exception = e
+                        parse_attempt += 1
+                        if parse_attempt < max_attempts:
+                            logger.info("Retrying JSON parsing after 1 second...")
+                            _time.sleep(1)
+                # If all parsing attempts fail for this API response, break to next API attempt
+                logger.info(f"All JSON parsing attempts failed for API attempt {attempt+1}.")
             except Exception as e:
                 api_response_time = time.time() - api_start_time
                 logger.error(f"Gemini API call failed after {api_response_time:.3f}s: {e}")
-                
-                # Log failed API call
                 log_external_api_call(
                     logger=logger,
                     service="Gemini",
@@ -150,39 +228,17 @@ Return only the JSON response, no additional text.
                     response_time=api_response_time,
                     request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
                 )
-                raise
-            
-            if not response.text:
-                raise Exception("Empty response from Gemini API")
-            
-            logger.info(f"Response text length: {len(response.text)} characters")
-            
-            # Parse JSON response
-            logger.debug("Parsing JSON response from Gemini")
-            plan_data = self._parse_json_response(response.text)
-            logger.info("Successfully parsed plan data from Gemini response")
-            
-            # Enrich plan with web search and weather data
-            logger.info("Enriching plan with external tools")
-            enrichment_start = time.time()
-            enriched_plan = self._enrich_plan_with_tools(plan_data, goal)
-            enrichment_time = time.time() - enrichment_start
-            logger.info(f"Plan enrichment completed in {enrichment_time:.3f}s")
-            
-            total_time = time.time() - start_time
-            logger.info(f"Plan generation completed successfully in {total_time:.3f}s")
-            
-            # Log successful plan generation
-            logger.info(f"Generated plan with {len(enriched_plan.get('steps', []))} steps")
-            
-            return enriched_plan
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            raise Exception(f"Invalid JSON response from Gemini: {e}")
-        except Exception as e:
-            logger.error(f"Error generating plan: {e}")
-            raise Exception(f"Plan generation failed: {e}")
+                last_exception = e
+            attempt += 1
+            if attempt < max_attempts:
+                logger.info("Retrying Gemini API call after 1 second...")
+                _time.sleep(1)
+        logger.error(f"All attempts to parse Gemini response failed. Last error: {last_exception}")
+        raise ExternalServiceError(
+            message=f"Failed to parse Gemini response after {max_attempts} attempts: {last_exception}",
+            service="Gemini",
+            original_error=last_exception
+        )
 
     def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
         """
@@ -199,28 +255,33 @@ Return only the JSON response, no additional text.
         """
         # Clean the response text
         cleaned_text = response_text.strip()
-        
         # Remove any markdown code blocks
         if cleaned_text.startswith('```json'):
             cleaned_text = cleaned_text[7:]
         if cleaned_text.endswith('```'):
             cleaned_text = cleaned_text[:-3]
-        
         # Find JSON object boundaries
         start_idx = cleaned_text.find('{')
         end_idx = cleaned_text.rfind('}')
-        
         if start_idx == -1 or end_idx == -1:
-            raise json.JSONDecodeError("No JSON object found in response", cleaned_text, 0)
-        
+            logger.error(f"Malformed Gemini response (no JSON object found): {cleaned_text}")
+            from exceptions import ExternalServiceError, ErrorCode
+            raise ExternalServiceError(
+                message="No JSON object found in Gemini response.",
+                service="Gemini",
+                original_error=None
+            )
         json_text = cleaned_text[start_idx:end_idx + 1]
-        
         try:
-            return json.loads(json_text)
-        except json.JSONDecodeError as e:
-            # Try to fix common JSON issues
-            fixed_json = self._fix_json_formatting(json_text)
-            return json.loads(fixed_json)
+            return fix_json_response(json_text)
+        except Exception as e:
+            logger.error(f"Malformed Gemini response: {json_text}\nError: {e}")
+            from exceptions import ExternalServiceError, ErrorCode
+            raise ExternalServiceError(
+                message=f"Malformed JSON from Gemini could not be repaired: {e}",
+                service="Gemini",
+                original_error=e
+            )
 
     def _fix_json_formatting(self, json_text: str) -> str:
         """

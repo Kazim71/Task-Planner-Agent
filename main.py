@@ -11,7 +11,7 @@ import traceback
 
 # Import our modules
 from agent import TaskPlanningAgent, create_plan, get_all_saved_plans
-from models import create_tables, get_plan_by_id, delete_plan, search_plans_by_goal
+from models import create_tables, get_plan_by_id, delete_plan, search_plans_by_goal, get_all_plans
 from exceptions import (
     TaskPlannerException, ValidationError, AuthenticationError, 
     ResourceNotFoundError, ExternalServiceError, DatabaseError,
