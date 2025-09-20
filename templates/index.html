@@ -265,6 +265,78 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        
+        .message-content {
+            position: relative;
+        }
+        
+        .error-details {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .error-details-container {
+            font-family: monospace;
+        }
+        
+        .error-section {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(220, 53, 69, 0.1);
+            border-left: 3px solid #dc3545;
+        }
+        
+        .error-field {
+            margin-bottom: 5px;
+            padding: 4px;
+            background: rgba(0,0,0,0.05);
+        }
+        
+        .error-detail {
+            margin-bottom: 5px;
+            padding: 4px;
+            background: rgba(0,0,0,0.05);
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+        }
+        
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: 500;
+        }
 
         @media (max-width: 768px) {
             .container {
@@ -388,64 +460,131 @@
             const startDate = formData.get('start_date');
             const saveToDb = formData.get('save_to_db') === 'on';
             
+            // Clear previous messages
+            clearMessages();
+            
             if (!goal.trim()) {
                 showMessage('Please enter a goal', 'error');
                 return;
             }
             
             // Show loading state
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('submitBtn').disabled = true;
+            showLoading(true);
             document.getElementById('resultSection').style.display = 'none';
             
             try {
+                console.log('Sending request to /plan endpoint...');
                 const response = await fetch('/plan', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        goal: goal,
+                        goal: goal.trim(),
                         start_date: startDate || null,
                         save_to_db: saveToDb
                     })
                 });
                 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                // Check if response is ok
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Response data:', data);
                 
                 if (data.success) {
-                    document.getElementById('planOutput').textContent = data.formatted_plan;
-                    document.getElementById('resultSection').style.display = 'block';
-                    showMessage('Plan generated successfully!', 'success');
+                    // Success - display the plan
+                    if (data.formatted_plan) {
+                        document.getElementById('planOutput').textContent = data.formatted_plan;
+                        document.getElementById('resultSection').style.display = 'block';
+                        showMessage('Plan generated successfully!', 'success');
+                    } else {
+                        showMessage('Plan generated but no formatted output available', 'warning');
+                    }
                     
                     // Reload plans list if saved to database
-                    if (saveToDb) {
+                    if (saveToDb && data.plan_id) {
+                        showMessage(`Plan saved with ID: ${data.plan_id}`, 'success');
                         loadPlans();
                     }
                 } else {
-                    showMessage('Error: ' + data.message, 'error');
+                    // API returned error
+                    const errorMsg = data.message || 'Unknown error occurred';
+                    showMessage(`Error: ${errorMsg}`, 'error', data);
+                    console.error('API Error:', data);
                 }
             } catch (error) {
-                showMessage('Error: ' + error.message, 'error');
+                console.error('Request failed:', error);
+                
+                // Handle different types of errors with detailed information
+                let errorMessage = 'An error occurred while creating the plan';
+                let errorDetails = {
+                    type: 'request_error',
+                    original_error: error.message,
+                    name: error.name
+                };
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to the server. Please make sure the server is running.';
+                    errorDetails.type = 'connection_error';
+                    errorDetails.suggestion = 'Check if the server is running on the correct port';
+                } else if (error.message.includes('HTTP')) {
+                    errorMessage = `Server error: ${error.message}`;
+                    errorDetails.type = 'http_error';
+                } else if (error.message.includes('JSON')) {
+                    errorMessage = 'Invalid response from server. Please try again.';
+                    errorDetails.type = 'parse_error';
+                    errorDetails.suggestion = 'The server returned invalid JSON data';
+                } else {
+                    errorMessage = `Error: ${error.message}`;
+                }
+                
+                showMessage(errorMessage, 'error', errorDetails);
             } finally {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                showLoading(false);
             }
         });
 
         // Load saved plans
         async function loadPlans() {
+            const plansList = document.getElementById('plansList');
+            plansList.innerHTML = '<p>Loading plans...</p>';
+            
             try {
+                console.log('Loading plans...');
                 const response = await fetch('/plans');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Plans response:', data);
                 
                 if (data.success) {
                     displayPlans(data.plans);
+                    console.log(`Loaded ${data.plans.length} plans`);
                 } else {
-                    document.getElementById('plansList').innerHTML = '<p>Error loading plans: ' + data.message + '</p>';
+                    const errorMsg = data.message || 'Failed to load plans';
+                    plansList.innerHTML = `<p class="error">Error loading plans: ${errorMsg}</p>`;
+                    console.error('Plans API Error:', data);
                 }
             } catch (error) {
-                document.getElementById('plansList').innerHTML = '<p>Error loading plans: ' + error.message + '</p>';
+                console.error('Plans loading error:', error);
+                let errorMessage = 'Failed to load plans';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please check if the server is running.';
+                } else {
+                    errorMessage = `Error: ${error.message}`;
+                }
+                
+                plansList.innerHTML = `<p class="error">${errorMessage}</p>`;
             }
         }
 
@@ -475,19 +614,41 @@
 
         // View specific plan
         async function viewPlan(planId) {
+            console.log(`Viewing plan ${planId}...`);
+            showMessage('Loading plan...', 'info');
+            
             try {
                 const response = await fetch(`/plans/${planId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('View plan response:', data);
                 
                 if (data.success) {
-                    document.getElementById('planOutput').textContent = data.formatted_plan || JSON.stringify(data.plan_data, null, 2);
+                    const planContent = data.formatted_plan || JSON.stringify(data.plan_data, null, 2);
+                    document.getElementById('planOutput').textContent = planContent;
                     document.getElementById('resultSection').style.display = 'block';
                     document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                    showMessage('Plan loaded successfully', 'success');
                 } else {
-                    showMessage('Error: ' + data.message, 'error');
+                    const errorMsg = data.message || 'Failed to load plan';
+                    showMessage(`Error: ${errorMsg}`, 'error');
+                    console.error('View plan API Error:', data);
                 }
             } catch (error) {
-                showMessage('Error: ' + error.message, 'error');
+                console.error('View plan error:', error);
+                let errorMessage = 'Failed to load plan';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please check if the server is running.';
+                } else {
+                    errorMessage = `Error: ${error.message}`;
+                }
+                
+                showMessage(errorMessage, 'error');
             }
         }
 
@@ -497,54 +658,179 @@
                 return;
             }
             
+            console.log(`Deleting plan ${planId}...`);
+            showMessage('Deleting plan...', 'info');
+            
             try {
                 const response = await fetch(`/plans/${planId}`, {
                     method: 'DELETE'
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Delete plan response:', data);
                 
                 if (data.success) {
                     showMessage('Plan deleted successfully', 'success');
                     loadPlans();
                 } else {
-                    showMessage('Error: ' + data.message, 'error');
+                    const errorMsg = data.message || 'Failed to delete plan';
+                    showMessage(`Error: ${errorMsg}`, 'error');
+                    console.error('Delete plan API Error:', data);
                 }
             } catch (error) {
-                showMessage('Error: ' + error.message, 'error');
+                console.error('Delete plan error:', error);
+                let errorMessage = 'Failed to delete plan';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please check if the server is running.';
+                } else {
+                    errorMessage = `Error: ${error.message}`;
+                }
+                
+                showMessage(errorMessage, 'error');
             }
         }
 
         // Search plans
         async function searchPlans() {
             const searchTerm = document.getElementById('searchInput').value;
+            const plansList = document.getElementById('plansList');
+            
+            if (searchTerm.trim()) {
+                plansList.innerHTML = '<p>Searching plans...</p>';
+            }
             
             try {
                 const url = searchTerm ? `/plans?search=${encodeURIComponent(searchTerm)}` : '/plans';
+                console.log(`Searching plans with: ${searchTerm || 'all'}`);
+                
                 const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Search response:', data);
                 
                 if (data.success) {
                     displayPlans(data.plans);
+                    if (searchTerm.trim()) {
+                        showMessage(`Found ${data.plans.length} plan(s) matching "${searchTerm}"`, 'info');
+                    }
+                } else {
+                    const errorMsg = data.message || 'Search failed';
+                    plansList.innerHTML = `<p class="error">Search error: ${errorMsg}</p>`;
+                    console.error('Search API Error:', data);
                 }
             } catch (error) {
                 console.error('Search error:', error);
+                let errorMessage = 'Search failed';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please check if the server is running.';
+                } else {
+                    errorMessage = `Error: ${error.message}`;
+                }
+                
+                plansList.innerHTML = `<p class="error">${errorMessage}</p>`;
             }
         }
 
-        // Show message
-        function showMessage(message, type) {
+        // Show message with enhanced error details
+        function showMessage(message, type, details = null) {
+            console.log(`Message [${type}]: ${message}`, details);
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}`;
-            messageDiv.textContent = message;
+            
+            // Create detailed error message
+            let messageContent = message;
+            if (details && type === 'error') {
+                messageContent += formatErrorDetails(details);
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <span class="message-text">${message}</span>
+                    ${details && type === 'error' ? `<div class="error-details">${formatErrorDetails(details)}</div>` : ''}
+                    ${type === 'error' ? '<button class="close-btn" onclick="this.parentElement.parentElement.remove()">&times;</button>' : ''}
+                </div>
+            `;
             
             // Insert after the form
             const formSection = document.querySelector('.form-section');
             formSection.insertAdjacentElement('afterend', messageDiv);
             
-            // Remove after 5 seconds
+            // Auto-remove after different times based on type
+            const timeout = type === 'error' ? 15000 : (type === 'info' ? 3000 : (type === 'warning' ? 7000 : 5000));
             setTimeout(() => {
-                messageDiv.remove();
-            }, 5000);
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, timeout);
+        }
+        
+        // Format error details for display
+        function formatErrorDetails(details) {
+            if (!details) return '';
+            
+            if (typeof details === 'string') {
+                return `<div class="error-detail">${details}</div>`;
+            }
+            
+            if (typeof details === 'object') {
+                let formatted = '<div class="error-details-container">';
+                
+                // Handle structured error responses
+                if (details.error) {
+                    formatted += `<div class="error-section">
+                        <strong>Error Code:</strong> ${details.error.code || 'Unknown'}<br>
+                        <strong>Status:</strong> ${details.error.status_code || 'Unknown'}<br>
+                        ${details.error.details ? `<strong>Details:</strong> ${JSON.stringify(details.error.details, null, 2)}<br>` : ''}
+                    </div>`;
+                }
+                
+                // Handle other object properties
+                for (const [key, value] of Object.entries(details)) {
+                    if (key !== 'error') {
+                        formatted += `<div class="error-field">
+                            <strong>${key}:</strong> ${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+                        </div>`;
+                    }
+                }
+                
+                formatted += '</div>';
+                return formatted;
+            }
+            
+            return `<div class="error-detail">${JSON.stringify(details, null, 2)}</div>`;
+        }
+
+        // Clear all messages
+        function clearMessages() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => msg.remove());
+        }
+
+        // Show/hide loading state
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (show) {
+                loading.style.display = 'block';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Generating...';
+            } else {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Generate Plan';
+            }
         }
 
         // Load plans on page load

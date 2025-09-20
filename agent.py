@@ -4,13 +4,13 @@ import google.generativeai as genai
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import re
-from tools import tavily_web_search, get_weather
+import time
+# from tools import tavily_web_search, get_weather  # Commented out - APIs not available
 from models import save_plan, get_all_plans
-import logging
+from logging_config import get_logger, log_external_api_call, log_database_operation, sanitize_log_data
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TaskPlanningAgent:
@@ -91,6 +91,9 @@ Be specific, realistic, and actionable in your planning."""
         if not start_date:
             start_date = datetime.now().strftime("%Y-%m-%d")
         
+        start_time = time.time()
+        logger.info(f"Starting plan generation for goal: {goal[:100]}{'...' if len(goal) > 100 else ''}")
+        
         try:
             # Create the prompt for Gemini
             prompt = f"""
@@ -110,21 +113,68 @@ Please create a detailed, actionable plan for this goal. Make sure to:
 Return only the JSON response, no additional text.
 """
             
-            logger.info(f"Generating plan for goal: {goal}")
+            logger.debug(f"Prompt length: {len(prompt)} characters")
             
             # Generate response from Gemini
-            response = self.model.generate_content(prompt)
+            logger.info("Sending request to Gemini API")
+            api_start_time = time.time()
+            
+            try:
+                response = self.model.generate_content(prompt)
+                api_response_time = time.time() - api_start_time
+                
+                # Log external API call
+                log_external_api_call(
+                    logger=logger,
+                    service="Gemini",
+                    endpoint="generate_content",
+                    method="POST",
+                    status_code=200,  # Assume success if no exception
+                    response_time=api_response_time,
+                    request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
+                )
+                
+                logger.info(f"Received response from Gemini API in {api_response_time:.3f}s")
+                
+            except Exception as e:
+                api_response_time = time.time() - api_start_time
+                logger.error(f"Gemini API call failed after {api_response_time:.3f}s: {e}")
+                
+                # Log failed API call
+                log_external_api_call(
+                    logger=logger,
+                    service="Gemini",
+                    endpoint="generate_content",
+                    method="POST",
+                    error=str(e),
+                    response_time=api_response_time,
+                    request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
+                )
+                raise
             
             if not response.text:
                 raise Exception("Empty response from Gemini API")
             
+            logger.info(f"Response text length: {len(response.text)} characters")
+            
             # Parse JSON response
+            logger.debug("Parsing JSON response from Gemini")
             plan_data = self._parse_json_response(response.text)
+            logger.info("Successfully parsed plan data from Gemini response")
             
             # Enrich plan with web search and weather data
+            logger.info("Enriching plan with external tools")
+            enrichment_start = time.time()
             enriched_plan = self._enrich_plan_with_tools(plan_data, goal)
+            enrichment_time = time.time() - enrichment_start
+            logger.info(f"Plan enrichment completed in {enrichment_time:.3f}s")
             
-            logger.info("Plan generated successfully")
+            total_time = time.time() - start_time
+            logger.info(f"Plan generation completed successfully in {total_time:.3f}s")
+            
+            # Log successful plan generation
+            logger.info(f"Generated plan with {len(enriched_plan.get('steps', []))} steps")
+            
             return enriched_plan
             
         except json.JSONDecodeError as e:
@@ -197,39 +247,35 @@ Return only the JSON response, no additional text.
 
     def _enrich_plan_with_tools(self, plan_data: Dict[str, Any], original_goal: str) -> Dict[str, Any]:
         """
-        Enrich the plan with web search results and weather information.
-        
-        Args:
-            plan_data (Dict[str, Any]): The base plan data
-            original_goal (str): The original goal for context
-            
-        Returns:
-            Dict[str, Any]: Enriched plan data
+        Enrich the plan with placeholder messages for missing APIs.
+        This method provides graceful handling when external APIs are not available.
         """
         try:
-            # Add enrichment metadata
+            # Add enrichment metadata with helpful messages
             plan_data["enrichment"] = {
-                "web_search_results": {},
-                "weather_info": {},
-                "enriched_at": datetime.now().isoformat()
+                "web_search_results": {
+                    "status": "unavailable",
+                    "message": "Web search requires Tavily API key",
+                    "suggestion": "Add TAVILY_API_KEY to your .env file to enable web search enrichment"
+                },
+                "weather_info": {
+                    "status": "unavailable", 
+                    "message": "Weather information requires OpenWeatherMap API key",
+                    "suggestion": "Add OPENWEATHER_API_KEY to your .env file to enable weather data"
+                },
+                "enriched_at": datetime.now().isoformat(),
+                "note": "Using Gemini AI only - external APIs not configured"
             }
             
-            # Collect all research topics
+            # Collect research topics for display (even though we won't search them)
             all_research_topics = []
             for day in plan_data.get("daily_breakdown", []):
                 topics = day.get("research_topics", [])
                 all_research_topics.extend(topics)
             
-            # Perform web searches for research topics
             if all_research_topics:
-                logger.info("Enriching plan with web search results")
-                for topic in all_research_topics[:3]:  # Limit to 3 topics to avoid rate limits
-                    try:
-                        search_results = tavily_web_search(f"{topic} {original_goal}")
-                        plan_data["enrichment"]["web_search_results"][topic] = search_results
-                    except Exception as e:
-                        logger.warning(f"Web search failed for topic '{topic}': {e}")
-                        plan_data["enrichment"]["web_search_results"][topic] = f"Search failed: {e}"
+                plan_data["enrichment"]["research_topics_found"] = all_research_topics[:5]  # Show first 5 topics
+                plan_data["enrichment"]["web_search_results"]["topics_to_research"] = all_research_topics[:5]
             
             # Check for weather-relevant days
             weather_days = []
@@ -237,28 +283,19 @@ Return only the JSON response, no additional text.
                 if day.get("weather_relevant", False):
                     weather_days.append(day)
             
-            # Get weather information for relevant days
             if weather_days:
-                logger.info("Enriching plan with weather information")
-                # Try to extract location from goal or use a default
-                location = self._extract_location_from_goal(original_goal)
-                if location:
-                    try:
-                        weather_info = get_weather(location)
-                        plan_data["enrichment"]["weather_info"]["location"] = location
-                        plan_data["enrichment"]["weather_info"]["current_weather"] = weather_info
-                    except Exception as e:
-                        logger.warning(f"Weather lookup failed for location '{location}': {e}")
-                        plan_data["enrichment"]["weather_info"]["error"] = str(e)
+                plan_data["enrichment"]["weather_info"]["weather_relevant_days"] = len(weather_days)
+                plan_data["enrichment"]["weather_info"]["message"] = f"Weather information would be helpful for {len(weather_days)} day(s) in your plan"
             
             return plan_data
             
         except Exception as e:
-            logger.error(f"Error enriching plan: {e}")
-            # Return original plan if enrichment fails
+            logger.error(f"Error in plan enrichment: {e}")
+            # Return basic enrichment info even if something goes wrong
             plan_data["enrichment"] = {
                 "error": f"Enrichment failed: {e}",
-                "enriched_at": datetime.now().isoformat()
+                "enriched_at": datetime.now().isoformat(),
+                "note": "Using Gemini AI only"
             }
             return plan_data
 
@@ -296,20 +333,65 @@ Return only the JSON response, no additional text.
         Returns:
             Optional[int]: The ID of the saved plan, or None if failed
         """
+        start_time = time.time()
+        logger.info("Starting database save operation")
+        
         try:
             goal = plan_data.get("goal", "Unknown goal")
             steps = plan_data.get("daily_breakdown", [])
             
+            # Log database operation start
+            log_database_operation(
+                logger=logger,
+                operation="INSERT",
+                table="plans",
+                success=True,
+                execution_time=0  # Will be updated after operation
+            )
+            
             plan = save_plan(goal, steps)
+            execution_time = time.time() - start_time
+            
             if plan:
-                logger.info(f"Plan saved to database with ID: {plan.id}")
+                logger.info(f"Plan saved successfully with ID: {plan.id} in {execution_time:.3f}s")
+                
+                # Log successful database operation
+                log_database_operation(
+                    logger=logger,
+                    operation="INSERT",
+                    table="plans",
+                    record_id=str(plan.id),
+                    success=True,
+                    execution_time=execution_time
+                )
                 return plan.id
             else:
-                logger.error("Failed to save plan to database")
+                logger.warning(f"Failed to save plan - no plan object returned after {execution_time:.3f}s")
+                
+                # Log failed database operation
+                log_database_operation(
+                    logger=logger,
+                    operation="INSERT",
+                    table="plans",
+                    success=False,
+                    error="No plan object returned from save operation",
+                    execution_time=execution_time
+                )
                 return None
                 
         except Exception as e:
-            logger.error(f"Error saving plan to database: {e}")
+            execution_time = time.time() - start_time
+            logger.error(f"Error saving plan to database after {execution_time:.3f}s: {e}")
+            
+            # Log failed database operation
+            log_database_operation(
+                logger=logger,
+                operation="INSERT",
+                table="plans",
+                success=False,
+                error=str(e),
+                execution_time=execution_time
+            )
             return None
 
     def format_plan_output(self, plan_data: Dict[str, Any]) -> str:
@@ -382,12 +464,33 @@ Return only the JSON response, no additional text.
             
             # Enrichment info
             enrichment = plan_data.get('enrichment', {})
-            if enrichment and not enrichment.get('error'):
+            if enrichment:
                 output.append("\nENRICHMENT INFO:")
-                if enrichment.get('web_search_results'):
-                    output.append("  • Web search results included")
-                if enrichment.get('weather_info'):
-                    output.append("  • Weather information included")
+                if enrichment.get('error'):
+                    output.append(f"  • Error: {enrichment['error']}")
+                else:
+                    # Web search info
+                    web_info = enrichment.get('web_search_results', {})
+                    if web_info.get('status') == 'unavailable':
+                        output.append(f"  • Web Search: {web_info.get('message', 'Not available')}")
+                        if web_info.get('topics_to_research'):
+                            topics = ', '.join(web_info['topics_to_research'])
+                            output.append(f"    Topics to research: {topics}")
+                    else:
+                        output.append("  • Web search results included")
+                    
+                    # Weather info
+                    weather_info = enrichment.get('weather_info', {})
+                    if weather_info.get('status') == 'unavailable':
+                        output.append(f"  • Weather: {weather_info.get('message', 'Not available')}")
+                    else:
+                        output.append("  • Weather information included")
+                    
+                    # Show suggestions
+                    if web_info.get('suggestion'):
+                        output.append(f"  • Suggestion: {web_info['suggestion']}")
+                    if weather_info.get('suggestion'):
+                        output.append(f"  • Suggestion: {weather_info['suggestion']}")
             
             output.append("\n" + "=" * 60)
             

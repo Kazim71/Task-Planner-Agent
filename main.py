@@ -12,10 +12,21 @@ import traceback
 # Import our modules
 from agent import TaskPlanningAgent, create_plan, get_all_saved_plans
 from models import create_tables, get_plan_by_id, delete_plan, search_plans_by_goal
+from exceptions import (
+    TaskPlannerException, ValidationError, AuthenticationError, 
+    ResourceNotFoundError, ExternalServiceError, DatabaseError,
+    ConfigurationError, handle_exception, create_error_response
+)
+from validators import InputValidator, validate_api_key
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from logging_config import setup_logging, get_logger, log_api_request, log_database_operation, log_security_event, sanitize_log_data
+
+# Set up comprehensive logging
+logger = setup_logging(
+    log_level=os.getenv('LOG_LEVEL', 'INFO'),
+    log_file=os.getenv('LOG_FILE')
+)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -23,6 +34,65 @@ app = FastAPI(
     description="AI-powered task planning with Google Gemini",
     version="1.0.0"
 )
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all HTTP requests with timing and response details."""
+    import time
+    start_time = time.time()
+    
+    # Get client information
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    # Log request start
+    logger.info(f"Request started - {request.method} {request.url.path} from {client_ip}")
+    
+    # Process request
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        # Log API request details
+        log_api_request(
+            logger=logger,
+            method=request.method,
+            endpoint=request.url.path,
+            status_code=response.status_code,
+            response_time=process_time,
+            user_agent=user_agent,
+            ip_address=client_ip
+        )
+        
+        # Log security events for suspicious requests
+        if response.status_code >= 400:
+            log_security_event(
+                logger=logger,
+                event_type="HTTP_ERROR",
+                details=f"{request.method} {request.url.path} returned {response.status_code}",
+                severity="WARNING",
+                ip_address=client_ip,
+                user_agent=user_agent
+            )
+        
+        return response
+        
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(f"Request failed - {request.method} {request.url.path} - Error: {str(e)}")
+        
+        # Log security event for request failures
+        log_security_event(
+            logger=logger,
+            event_type="REQUEST_FAILURE",
+            details=f"{request.method} {request.url.path} failed with exception: {str(e)}",
+            severity="ERROR",
+            ip_address=client_ip,
+            user_agent=user_agent
+        )
+        
+        raise
 
 # Setup templates
 templates = Jinja2Templates(directory="templates")
@@ -107,34 +177,95 @@ async def create_plan_endpoint(plan_request: PlanRequest):
     try:
         logger.info(f"Creating plan for goal: {plan_request.goal}")
         
-        # Validate start_date if provided
-        if plan_request.start_date:
-            try:
-                datetime.strptime(plan_request.start_date, "%Y-%m-%d")
-            except ValueError:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid start_date format. Use YYYY-MM-DD"
-                )
+        # Validate input using the validator
+        try:
+            validated_data = InputValidator.validate_plan_request({
+                "goal": plan_request.goal,
+                "start_date": plan_request.start_date,
+                "save_to_db": plan_request.save_to_db
+            })
+        except ValidationError as e:
+            logger.warning(f"Validation error: {e.message}")
+            return PlanResponse(
+                success=False,
+                message=e.message,
+                plan_id=None,
+                plan_data=None,
+                formatted_plan=None
+            )
+        
+        # Check for required API key
+        try:
+            gemini_key = os.getenv('GEMINI_API_KEY')
+            if not gemini_key:
+                raise ConfigurationError("GEMINI_API_KEY environment variable is not set", "GEMINI_API_KEY")
+            validate_api_key(gemini_key, "Gemini")
+        except (ConfigurationError, ValidationError) as e:
+            logger.error(f"API key validation failed: {e.message}")
+            return PlanResponse(
+                success=False,
+                message=e.message,
+                plan_id=None,
+                plan_data=None,
+                formatted_plan=None
+            )
         
         # Create the planning agent
-        agent = TaskPlanningAgent()
+        try:
+            agent = TaskPlanningAgent()
+            logger.info("TaskPlanningAgent initialized successfully")
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Failed to initialize TaskPlanningAgent: {error.message}")
+            return PlanResponse(
+                success=False,
+                message=error.message,
+                plan_id=None,
+                plan_data=None,
+                formatted_plan=None
+            )
         
         # Generate the plan
-        plan_data = agent.generate_plan(
-            goal=plan_request.goal,
-            start_date=plan_request.start_date
-        )
+        try:
+            plan_data = agent.generate_plan(
+                goal=validated_data["goal"],
+                start_date=validated_data["start_date"]
+            )
+            logger.info("Plan generated successfully")
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Failed to generate plan: {error.message}")
+            return PlanResponse(
+                success=False,
+                message=error.message,
+                plan_id=None,
+                plan_data=None,
+                formatted_plan=None
+            )
         
         # Save to database if requested
         plan_id = None
-        if plan_request.save_to_db:
-            plan_id = agent.save_plan_to_database(plan_data)
-            if not plan_id:
-                logger.warning("Failed to save plan to database")
+        if validated_data["save_to_db"]:
+            try:
+                plan_id = agent.save_plan_to_database(plan_data)
+                if plan_id:
+                    logger.info(f"Plan saved to database with ID: {plan_id}")
+                else:
+                    logger.warning("Failed to save plan to database - no ID returned")
+            except Exception as e:
+                error = handle_exception(e)
+                logger.error(f"Database save error: {error.message}")
+                # Continue without failing - plan was generated successfully
+                logger.info("Continuing without database save due to error")
         
         # Format the plan for display
-        formatted_plan = agent.format_plan_output(plan_data)
+        try:
+            formatted_plan = agent.format_plan_output(plan_data)
+            logger.info("Plan formatted successfully")
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Failed to format plan: {error.message}")
+            formatted_plan = f"Plan generated but formatting failed: {error.message}"
         
         return PlanResponse(
             success=True,
@@ -144,15 +275,24 @@ async def create_plan_endpoint(plan_request: PlanRequest):
             formatted_plan=formatted_plan
         )
         
-    except ValueError as e:
-        logger.error(f"Validation error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+    except TaskPlannerException as e:
+        logger.error(f"TaskPlannerException in create_plan_endpoint: {e.message}")
+        return PlanResponse(
+            success=False,
+            message=e.message,
+            plan_id=None,
+            plan_data=None,
+            formatted_plan=None
+        )
     except Exception as e:
-        logger.error(f"Error creating plan: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create plan: {str(e)}"
+        error = handle_exception(e)
+        logger.error(f"Unexpected error in create_plan_endpoint: {error.message}")
+        return PlanResponse(
+            success=False,
+            message=error.message,
+            plan_id=None,
+            plan_data=None,
+            formatted_plan=None
         )
 
 # Get all plans
@@ -169,17 +309,55 @@ async def get_plans_endpoint(limit: Optional[int] = None, search: Optional[str] 
         PlanListResponse: List of all saved plans
     """
     try:
-        logger.info("Retrieving all plans")
+        logger.info(f"Retrieving plans - limit: {limit}, search: {search}")
         
-        if search:
-            # Search plans by goal keyword
-            plans = search_plans_by_goal(search)
-        else:
-            # Get all plans
-            plans = get_all_plans(limit=limit)
+        # Validate query parameters
+        try:
+            validated_params = InputValidator.validate_plans_query_params(limit, search)
+            limit = validated_params["limit"]
+            search = validated_params["search"]
+        except ValidationError as e:
+            logger.warning(f"Validation error: {e.message}")
+            return PlanListResponse(
+                success=False,
+                message=e.message,
+                plans=[],
+                total_count=0
+            )
+        
+        # Query database
+        try:
+            if search:
+                # Search plans by goal keyword
+                logger.info(f"Searching plans with keyword: {search}")
+                plans = search_plans_by_goal(search)
+            else:
+                # Get all plans
+                logger.info("Retrieving all plans")
+                plans = get_all_plans(limit=limit)
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Database query failed: {error.message}")
+            return PlanListResponse(
+                success=False,
+                message=error.message,
+                plans=[],
+                total_count=0
+            )
         
         # Convert to dictionaries
-        plan_dicts = [plan.to_dict() for plan in plans]
+        try:
+            plan_dicts = [plan.to_dict() for plan in plans]
+            logger.info(f"Successfully converted {len(plan_dicts)} plans to dictionaries")
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Failed to convert plans to dictionaries: {error.message}")
+            return PlanListResponse(
+                success=False,
+                message=error.message,
+                plans=[],
+                total_count=0
+            )
         
         return PlanListResponse(
             success=True,
@@ -188,12 +366,22 @@ async def get_plans_endpoint(limit: Optional[int] = None, search: Optional[str] 
             total_count=len(plan_dicts)
         )
         
+    except TaskPlannerException as e:
+        logger.error(f"TaskPlannerException in get_plans_endpoint: {e.message}")
+        return PlanListResponse(
+            success=False,
+            message=e.message,
+            plans=[],
+            total_count=0
+        )
     except Exception as e:
-        logger.error(f"Error retrieving plans: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve plans: {str(e)}"
+        error = handle_exception(e)
+        logger.error(f"Unexpected error in get_plans_endpoint: {error.message}")
+        return PlanListResponse(
+            success=False,
+            message=error.message,
+            plans=[],
+            total_count=0
         )
 
 # Get a specific plan by ID
@@ -211,34 +399,84 @@ async def get_plan_endpoint(plan_id: int):
     try:
         logger.info(f"Retrieving plan with ID: {plan_id}")
         
+        # Validate plan_id
+        try:
+            validated_plan_id = InputValidator.validate_plan_id(plan_id)
+        except ValidationError as e:
+            logger.warning(f"Validation error: {e.message}")
+            return PlanResponse(
+                success=False,
+                message=e.message,
+                plan_id=plan_id,
+                plan_data=None,
+                formatted_plan=None
+            )
+        
         # Get the plan from database
-        plan = get_plan_by_id(plan_id)
+        try:
+            plan = get_plan_by_id(validated_plan_id)
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Database query failed for plan ID {validated_plan_id}: {error.message}")
+            return PlanResponse(
+                success=False,
+                message=error.message,
+                plan_id=validated_plan_id,
+                plan_data=None,
+                formatted_plan=None
+            )
         
         if not plan:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Plan with ID {plan_id} not found"
+            logger.warning(f"Plan with ID {validated_plan_id} not found")
+            return PlanResponse(
+                success=False,
+                message=f"Plan with ID {validated_plan_id} not found",
+                plan_id=validated_plan_id,
+                plan_data=None,
+                formatted_plan=None
             )
         
         # Convert to dictionary
-        plan_dict = plan.to_dict()
+        try:
+            plan_dict = plan.to_dict()
+            logger.info(f"Successfully retrieved plan {validated_plan_id}")
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Failed to convert plan {validated_plan_id} to dictionary: {error.message}")
+            return PlanResponse(
+                success=False,
+                message=error.message,
+                plan_id=validated_plan_id,
+                plan_data=None,
+                formatted_plan=None
+            )
         
         return PlanResponse(
             success=True,
-            message=f"Plan {plan_id} retrieved successfully",
-            plan_id=plan_id,
+            message=f"Plan {validated_plan_id} retrieved successfully",
+            plan_id=validated_plan_id,
             plan_data=plan_dict,
             formatted_plan=None  # Raw data, not formatted
         )
         
-    except HTTPException:
-        raise
+    except TaskPlannerException as e:
+        logger.error(f"TaskPlannerException in get_plan_endpoint: {e.message}")
+        return PlanResponse(
+            success=False,
+            message=e.message,
+            plan_id=plan_id,
+            plan_data=None,
+            formatted_plan=None
+        )
     except Exception as e:
-        logger.error(f"Error retrieving plan {plan_id}: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve plan: {str(e)}"
+        error = handle_exception(e)
+        logger.error(f"Unexpected error in get_plan_endpoint: {error.message}")
+        return PlanResponse(
+            success=False,
+            message=error.message,
+            plan_id=plan_id,
+            plan_data=None,
+            formatted_plan=None
         )
 
 # Delete a plan
@@ -256,59 +494,258 @@ async def delete_plan_endpoint(plan_id: int):
     try:
         logger.info(f"Deleting plan with ID: {plan_id}")
         
-        # Delete the plan
-        success = delete_plan(plan_id)
-        
-        if not success:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Plan with ID {plan_id} not found"
+        # Validate plan_id
+        try:
+            validated_plan_id = InputValidator.validate_plan_id(plan_id)
+        except ValidationError as e:
+            logger.warning(f"Validation error: {e.message}")
+            return PlanResponse(
+                success=False,
+                message=e.message,
+                plan_id=plan_id,
+                plan_data=None,
+                formatted_plan=None
             )
         
+        # Delete the plan
+        try:
+            success = delete_plan(validated_plan_id)
+        except Exception as e:
+            error = handle_exception(e)
+            logger.error(f"Database delete operation failed for plan ID {validated_plan_id}: {error.message}")
+            return PlanResponse(
+                success=False,
+                message=error.message,
+                plan_id=validated_plan_id,
+                plan_data=None,
+                formatted_plan=None
+            )
+        
+        if not success:
+            logger.warning(f"Plan with ID {validated_plan_id} not found for deletion")
+            return PlanResponse(
+                success=False,
+                message=f"Plan with ID {validated_plan_id} not found",
+                plan_id=validated_plan_id,
+                plan_data=None,
+                formatted_plan=None
+            )
+        
+        logger.info(f"Successfully deleted plan {validated_plan_id}")
         return PlanResponse(
             success=True,
-            message=f"Plan {plan_id} deleted successfully",
-            plan_id=plan_id,
+            message=f"Plan {validated_plan_id} deleted successfully",
+            plan_id=validated_plan_id,
             plan_data=None,
             formatted_plan=None
         )
         
-    except HTTPException:
-        raise
+    except TaskPlannerException as e:
+        logger.error(f"TaskPlannerException in delete_plan_endpoint: {e.message}")
+        return PlanResponse(
+            success=False,
+            message=e.message,
+            plan_id=plan_id,
+            plan_data=None,
+            formatted_plan=None
+        )
     except Exception as e:
-        logger.error(f"Error deleting plan {plan_id}: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete plan: {str(e)}"
+        error = handle_exception(e)
+        logger.error(f"Unexpected error in delete_plan_endpoint: {error.message}")
+        return PlanResponse(
+            success=False,
+            message=error.message,
+            plan_id=plan_id,
+            plan_data=None,
+            formatted_plan=None
         )
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint to verify the service is running.
+    Comprehensive health check endpoint to verify all services are working.
     
     Returns:
-        Dict: Health status information
+        Dict: Detailed health status information for all services
     """
+    health_data = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "services": {},
+        "environment": {},
+        "errors": []
+    }
+    
     try:
-        # Check if we can connect to the database
-        plans = get_all_plans(limit=1)
+        logger.info("Performing comprehensive health check")
         
-        return {
-            "status": "healthy",
-            "timestamp": datetime.now().isoformat(),
-            "database": "connected",
-            "plans_count": len(plans)
+        # Check environment variables
+        logger.info("Checking environment variables...")
+        env_vars = {
+            "GEMINI_API_KEY": os.getenv('GEMINI_API_KEY'),
+            "TAVILY_API_KEY": os.getenv('TAVILY_API_KEY'),
+            "OPENWEATHER_API_KEY": os.getenv('OPENWEATHER_API_KEY'),
+            "DATABASE_URL": os.getenv('DATABASE_URL', 'sqlite:///./task_planner.db')
         }
+        
+        for var, value in env_vars.items():
+            if value:
+                health_data["environment"][var] = "configured"
+            else:
+                health_data["environment"][var] = "missing"
+                if var == "GEMINI_API_KEY":
+                    health_data["errors"].append(f"Required environment variable {var} is not set")
+        
+        # Check database connection
+        logger.info("Checking database connection...")
+        try:
+            plans = get_all_plans(limit=1)
+            health_data["services"]["database"] = {
+                "status": "connected",
+                "type": "SQLite",
+                "plans_count": len(plans),
+                "message": "Database connection successful"
+            }
+            logger.info(f"Database health check passed - {len(plans)} plans found")
+        except Exception as e:
+            health_data["services"]["database"] = {
+                "status": "disconnected",
+                "type": "SQLite",
+                "error": str(e),
+                "message": "Database connection failed"
+            }
+            health_data["errors"].append(f"Database error: {str(e)}")
+            logger.error(f"Database health check failed: {e}")
+        
+        # Check Gemini API connectivity
+        logger.info("Checking Gemini API connectivity...")
+        try:
+            if env_vars["GEMINI_API_KEY"]:
+                # Try to initialize the agent to test API connectivity
+                agent = TaskPlanningAgent()
+                health_data["services"]["gemini_api"] = {
+                    "status": "connected",
+                    "type": "Google Gemini 2.5 Pro",
+                    "message": "API key valid and agent initialized successfully"
+                }
+                logger.info("Gemini API health check passed")
+            else:
+                health_data["services"]["gemini_api"] = {
+                    "status": "not_configured",
+                    "type": "Google Gemini 2.5 Pro",
+                    "message": "API key not provided"
+                }
+        except Exception as e:
+            health_data["services"]["gemini_api"] = {
+                "status": "error",
+                "type": "Google Gemini 2.5 Pro",
+                "error": str(e),
+                "message": "API connection failed"
+            }
+            health_data["errors"].append(f"Gemini API error: {str(e)}")
+            logger.error(f"Gemini API health check failed: {e}")
+        
+        # Check external APIs (optional)
+        logger.info("Checking external APIs...")
+        
+        # Check Tavily API
+        if env_vars["TAVILY_API_KEY"]:
+            health_data["services"]["tavily_api"] = {
+                "status": "configured",
+                "type": "Tavily Web Search",
+                "message": "API key configured (not tested for connectivity)"
+            }
+        else:
+            health_data["services"]["tavily_api"] = {
+                "status": "not_configured",
+                "type": "Tavily Web Search",
+                "message": "API key not provided (optional)"
+            }
+        
+        # Check OpenWeatherMap API
+        if env_vars["OPENWEATHER_API_KEY"]:
+            health_data["services"]["openweather_api"] = {
+                "status": "configured",
+                "type": "OpenWeatherMap",
+                "message": "API key configured (not tested for connectivity)"
+            }
+        else:
+            health_data["services"]["openweather_api"] = {
+                "status": "not_configured",
+                "type": "OpenWeatherMap",
+                "message": "API key not provided (optional)"
+            }
+        
+        # Check FastAPI server status
+        health_data["services"]["fastapi_server"] = {
+            "status": "running",
+            "type": "FastAPI",
+            "version": "0.104.1",
+            "message": "Server is running and responding"
+        }
+        
+        # Determine overall health status
+        critical_services = ["database", "gemini_api"]
+        degraded_services = ["tavily_api", "openweather_api"]
+        
+        critical_failed = any(
+            health_data["services"].get(service, {}).get("status") not in ["connected", "running"]
+            for service in critical_services
+        )
+        
+        if critical_failed:
+            health_data["status"] = "unhealthy"
+        elif any(
+            health_data["services"].get(service, {}).get("status") == "not_configured"
+            for service in degraded_services
+        ):
+            health_data["status"] = "degraded"
+        else:
+            health_data["status"] = "healthy"
+        
+        # Add summary
+        health_data["summary"] = {
+            "total_services": len(health_data["services"]),
+            "healthy_services": len([
+                s for s in health_data["services"].values()
+                if s.get("status") in ["connected", "running", "configured"]
+            ]),
+            "error_count": len(health_data["errors"]),
+            "recommendations": []
+        }
+        
+        # Add recommendations
+        if health_data["environment"].get("GEMINI_API_KEY") == "missing":
+            health_data["summary"]["recommendations"].append("Set GEMINI_API_KEY environment variable")
+        if health_data["services"].get("database", {}).get("status") != "connected":
+            health_data["summary"]["recommendations"].append("Check database connection and configuration")
+        if health_data["environment"].get("TAVILY_API_KEY") == "missing":
+            health_data["summary"]["recommendations"].append("Set TAVILY_API_KEY for web search enrichment (optional)")
+        if health_data["environment"].get("OPENWEATHER_API_KEY") == "missing":
+            health_data["summary"]["recommendations"].append("Set OPENWEATHER_API_KEY for weather information (optional)")
+        
+        logger.info(f"Health check completed - Status: {health_data['status']}")
+        return health_data
+        
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {
+        logger.error(traceback.format_exc())
+        
+        health_data.update({
             "status": "unhealthy",
-            "timestamp": datetime.now().isoformat(),
-            "error": str(e)
-        }
+            "error": str(e),
+            "services": {
+                "fastapi_server": {
+                    "status": "error",
+                    "type": "FastAPI",
+                    "error": str(e),
+                    "message": "Health check itself failed"
+                }
+            }
+        })
+        
+        return health_data
 
 # API documentation endpoint
 @app.get("/docs")
@@ -322,30 +759,86 @@ async def api_docs():
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/docs")
 
+# Global exception handler for unhandled exceptions
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Handle all unhandled exceptions with proper logging and JSON response."""
+    logger.error(f"Unhandled exception: {exc}")
+    logger.error(traceback.format_exc())
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": "Internal Server Error",
+            "message": "An unexpected error occurred. Please try again later.",
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+
 # Error handlers
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
     """Handle 404 errors with custom response."""
+    logger.warning(f"404 error: {exc.detail}")
     return JSONResponse(
         status_code=404,
-        content={
-            "success": False,
-            "error": "Not Found",
-            "message": "The requested resource was not found"
-        }
+        content=create_error_response(
+            ResourceNotFoundError(
+                message="The requested resource was not found",
+                resource_type="endpoint",
+                resource_id=request.url.path
+            )
+        )
+    )
+
+@app.exception_handler(422)
+async def validation_error_handler(request: Request, exc: Exception):
+    """Handle validation errors with detailed information."""
+    logger.warning(f"Validation error: {exc}")
+    return JSONResponse(
+        status_code=422,
+        content=create_error_response(
+            ValidationError(
+                message="Invalid request data. Please check your input.",
+                details={"validation_errors": str(exc)}
+            )
+        )
     )
 
 @app.exception_handler(500)
 async def internal_error_handler(request: Request, exc: HTTPException):
     """Handle 500 errors with custom response."""
     logger.error(f"Internal server error: {exc}")
+    logger.error(traceback.format_exc())
     return JSONResponse(
         status_code=500,
-        content={
-            "success": False,
-            "error": "Internal Server Error",
-            "message": "An unexpected error occurred"
-        }
+        content=create_error_response(
+            TaskPlannerException(
+                message="An unexpected error occurred. Please try again later.",
+                error_code=ErrorCode.INTERNAL_ERROR,
+                status_code=500,
+                details={"original_error": str(exc)}
+            )
+        )
+    )
+
+@app.exception_handler(TaskPlannerException)
+async def task_planner_exception_handler(request: Request, exc: TaskPlannerException):
+    """Handle TaskPlannerException."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=create_error_response(exc)
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle all other exceptions."""
+    error = handle_exception(exc)
+    logger.error(f"Unhandled exception: {error.message}")
+    return JSONResponse(
+        status_code=error.status_code,
+        content=create_error_response(error)
     )
 
 # Run the application
