@@ -163,7 +163,7 @@ Be specific, realistic, and actionable in your planning."""
         from exceptions import ExternalServiceError
         import time as _time
         max_attempts = 3
-        delay_seconds = 2
+        delay_seconds = 5
         last_exception = None
         prompts = [
             f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
@@ -175,7 +175,15 @@ Be specific, realistic, and actionable in your planning."""
             logger.info(f"Sending request to Gemini API (attempt {attempt+1})")
             api_start_time = time.time()
             try:
-                response = self.model.generate_content(prompt)
+                try:
+                    response = self.model.generate_content(prompt)
+                except Exception as e:
+                    logger.error(f"Gemini API call failed on attempt {attempt+1}: {e}")
+                    last_exception = e
+                    if attempt < max_attempts - 1:
+                        logger.info(f"Retrying Gemini API call after {delay_seconds} seconds...")
+                        time.sleep(delay_seconds)
+                    continue
                 api_response_time = time.time() - api_start_time
                 log_external_api_call(
                     logger=logger,
