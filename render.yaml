@@ -2,7 +2,7 @@ services:
   - type: web
     name: task-planner-agent
     env: python
-    pythonVersion: "3.12"  # ← ADD THIS LINE
+    pythonVersion: "3.12" 
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120
