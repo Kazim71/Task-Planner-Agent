@@ -1,4 +1,10 @@
+
 # Task Planner Agent
+
+[![Render Status](https://img.shields.io/badge/Live%20Demo-Render-blue?logo=render&style=flat-square)](https://task-planner-agent-ejj8.onrender.com/)
+
+**Live Demo:** [https://task-planner-agent-ejj8.onrender.com/](https://task-planner-agent-ejj8.onrender.com/)
+
 
 An intelligent AI-powered task planning application that leverages Google Gemini 2.5 Pro to transform natural language goals into structured, actionable day-by-day plans. The application enriches plans with web search results and weather information to provide comprehensive planning assistance.
 
@@ -352,7 +358,23 @@ The application includes comprehensive error handling for:
 - **CORS Configuration**: Configure CORS for production deployment
 - **Rate Limiting**: Implement rate limiting for production use
 
-## 🚀 Deployment
+
+## 🚀 Production Deployment (Render)
+
+This project is deployed and live on Render:
+
+**🌐 [https://task-planner-agent-ejj8.onrender.com/](https://task-planner-agent-ejj8.onrender.com/)**
+
+You can use this link in your portfolio, resume, or share with recruiters.
+
+### Render Deployment Steps (for future updates)
+
+1. Push your changes to the `main` branch on GitHub.
+2. Render will auto-deploy, or you can trigger a manual deploy from the Render dashboard.
+3. The live app will be available at the above URL.
+
+**Python version and dependencies are pinned for reliability.**
+
 
 ### Production Deployment
 

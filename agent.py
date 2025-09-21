@@ -1,3 +1,168 @@
+import os
+import logging
+
+# Startup API key validation and fallback mode
+FALLBACK_MODE = False
+missing_keys = []
+if not os.getenv('TAVILY_API_KEY'):
+    logging.error('TAVILY_API_KEY environment variable is missing. Web search will use fallback mode.')
+    missing_keys.append('TAVILY_API_KEY')
+if not os.getenv('OPENWEATHER_API_KEY'):
+    logging.error('OPENWEATHER_API_KEY environment variable is missing. Weather will use fallback mode.')
+    missing_keys.append('OPENWEATHER_API_KEY')
+if missing_keys:
+    FALLBACK_MODE = True
+def debug_print_api_keys():
+    import os
+    tavily = os.getenv('TAVILY_API_KEY')
+    openweather = os.getenv('OPENWEATHER_API_KEY')
+    print(f"TAVILY_API_KEY present: {bool(tavily)}, length: {len(tavily) if tavily else 0}")
+    print(f"OPENWEATHER_API_KEY present: {bool(openweather)}, length: {len(openweather) if openweather else 0}")
+
+debug_print_api_keys()
+import time
+import logging
+
+def timing_decorator(func):
+    """Decorator to log execution time of functions."""
+    import functools
+    @functools.wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed = time.time() - start
+        logging.getLogger(__name__).info(f"[TIMER] {func.__name__} executed in {elapsed:.3f}s")
+        return result
+    async def async_wrapper(*args, **kwargs):
+        start = time.time()
+        result = await func(*args, **kwargs)
+        elapsed = time.time() - start
+        logging.getLogger(__name__).info(f"[TIMER] {func.__name__} executed in {elapsed:.3f}s (async)")
+        return result
+    import asyncio
+    if asyncio.iscoroutinefunction(func):
+        return async_wrapper
+    else:
+        return sync_wrapper
+
+import requests
+# Simple in-memory cache for weather data
+_weather_cache = {}
+
+def validate_user_preferences(prefs: dict) -> dict:
+    """
+    Validate user preferences and provide defaults if needed.
+    Args:
+        prefs (dict): User preferences
+    Returns:
+        dict: Validated preferences
+    """
+    valid = {}
+    valid['interests'] = str(prefs.get('interests', '')).strip() or 'sightseeing, local cuisine, culture'
+    valid['citizenship'] = str(prefs.get('citizenship', '')).strip() or 'Unknown'
+    valid['budget'] = str(prefs.get('budget', '')).strip() or 'Moderate'
+    return valid
+
+def replace_destination_placeholders(text, itinerary):
+    """
+    Replace placeholders like [city 1], [country 1] with actual destination names from the itinerary.
+    Args:
+        text (str): Text with placeholders
+        itinerary (list): List of dicts with 'city' and 'country' keys
+    Returns:
+        str: Text with placeholders replaced
+    """
+    import re
+    if not isinstance(text, str):
+        return text
+    for i, day in enumerate(itinerary, 1):
+        if 'city' in day:
+            text = re.sub(rf'\[city {i}\]', day['city'], text)
+        if 'country' in day:
+            text = re.sub(rf'\[country {i}\]', day['country'], text)
+    return text
+
+def collect_user_preferences(interests: str = None, citizenship: str = None, budget: str = None) -> dict:
+    """
+    Collect user preferences for travel planning.
+    Args:
+        interests (str): User's travel interests
+        citizenship (str): User's nationality/citizenship
+        budget (str): User's travel budget
+    Returns:
+        dict: Dictionary with keys 'interests', 'citizenship', 'budget'
+    """
+    prefs = {
+        'interests': interests,
+        'citizenship': citizenship,
+        'budget': budget,
+    }
+    return validate_user_preferences(prefs)
+
+import asyncio
+async def get_weather_forecast(city: str, date_str: str, api_key: str = None) -> str:
+    """
+    Async get weather forecast for a city and date using OpenWeather API.
+    """
+    import os
+    import datetime
+    api_key = api_key or os.getenv('OPENWEATHER_API_KEY')
+    if not api_key:
+        return "Weather unavailable (API key not set)."
+    cache_key = f"{city.lower()}_{date_str}"
+    if cache_key in _weather_cache:
+        return _weather_cache[cache_key]
+    def fetch():
+        url = f"https://api.openweathermap.org/data/2.5/forecast"
+        params = {"q": city, "appid": api_key, "units": "metric"}
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    try:
+        data = await asyncio.wait_for(asyncio.to_thread(fetch), timeout=12)
+        target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        best = None
+        min_diff = None
+        for entry in data.get("list", []):
+            dt = datetime.datetime.fromtimestamp(entry["dt"])
+            if dt.date() == target_date:
+                diff = abs(dt.hour - 12)
+                if min_diff is None or diff < min_diff:
+                    min_diff = diff
+                    best = entry
+        if best:
+            main = best["weather"][0]["main"]
+            desc = best["weather"][0]["description"]
+            temp = best["main"]["temp"]
+            result = f"Weather: {main} ({desc}), {temp}°C"
+        else:
+            result = "No forecast available for this date."
+        _weather_cache[cache_key] = result
+        return result
+    except asyncio.TimeoutError:
+        return "Weather service timeout. Please try again later."
+    except requests.RequestException as e:
+        return f"Weather service error: {e}"
+    except Exception as e:
+        return "Weather service unavailable. Using fallback: Weather data not available."
+        _weather_cache[cache_key] = result
+        return result
+def collect_user_preferences(interests: str = None, citizenship: str = None, budget: str = None) -> dict:
+    """
+    Collect user preferences for travel planning.
+    Args:
+        interests (str): User's travel interests
+        citizenship (str): User's nationality/citizenship
+        budget (str): User's travel budget
+    Returns:
+        dict: Dictionary with keys 'interests', 'citizenship', 'budget'
+    """
+    prefs = {
+        'interests': interests or 'sightseeing, local cuisine, culture',
+        'citizenship': citizenship or 'Unknown',
+        'budget': budget or 'Moderate',
+    }
+    return prefs
 from typing import Dict, List, Any, Optional
 def fix_json_response(json_string: str) -> Dict[str, Any]:
     """
@@ -65,7 +230,18 @@ import os
 import json
 import google.generativeai as genai
 from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+
+def get_itinerary_dates(start_date: date, num_days: int) -> list[date]:
+    """
+    Generate a list of date objects for each day of the itinerary.
+    Args:
+        start_date (date): The first day of the itinerary
+        num_days (int): Number of days in the itinerary
+    Returns:
+        list[date]: List of date objects, one for each day
+    """
+    return [start_date + timedelta(days=i) for i in range(num_days)]
 import re
 import time
 # from tools import tavily_web_search, get_weather  # Commented out - APIs not available
@@ -133,29 +309,33 @@ Always return your response in the following JSON format:
 
 Be specific, realistic, and actionable in your planning."""
 
-    def generate_plan(self, goal: str, start_date: Optional[str] = None) -> Dict[str, Any]:
+    @timing_decorator
+    def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15) -> Dict[str, Any]:
         """
         Generate a structured plan for the given goal.
-        
         Args:
             goal (str): The natural language goal to plan for
-            start_date (Optional[str]): Start date in YYYY-MM-DD format. If None, uses today.
-            
-        import re
-        import json
-        from typing import Any, Dict
+            start_date (Optional[str]): Start date in YYYY-MM-DD format. If None, uses tomorrow.
+            num_days (int): Number of days in the itinerary (default 15)
         Returns:
             Dict[str, Any]: Structured plan with daily breakdown
-            
         Raises:
             ValueError: If goal is empty or API key is missing
             Exception: If plan generation fails
         """
+        import re
+        import json
+        from typing import Any, Dict
         if not goal or not goal.strip():
             raise ValueError("Goal cannot be empty")
-        
+        # Use tomorrow as default start date if not provided
         if not start_date:
-            start_date = datetime.now().strftime("%Y-%m-%d")
+            start_dt = date.today() + timedelta(days=1)
+            start_date = start_dt.strftime("%Y-%m-%d")
+        else:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+        # Generate itinerary dates
+        itinerary_dates = get_itinerary_dates(start_dt, num_days)
         
         start_time = time.time()
         logger.info(f"Starting plan generation for goal: {goal[:100]}{'...' if len(goal) > 100 else ''}")
@@ -165,9 +345,15 @@ Be specific, realistic, and actionable in your planning."""
         max_attempts = 3
         delay_seconds = 5
         last_exception = None
+        # Prepare user preferences for prompt
+        if user_prefs is None:
+            user_prefs = collect_user_preferences()
+        interests = user_prefs.get('interests', 'sightseeing, local cuisine, culture')
+        citizenship = user_prefs.get('citizenship', 'Unknown')
+        budget = user_prefs.get('budget', 'Moderate')
         prompts = [
-            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
-            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nReturn only the JSON response, no additional text."""
+            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks, using the provided itinerary dates\n- Personalize recommendations for the user's interests, citizenship, and budget\n- Replace all [placeholders] in the plan with actual user data\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
+            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nReturn only the JSON response, no additional text."""
         ]
         for attempt in range(max_attempts):
             prompt = prompts[0] if attempt == 0 else prompts[1]
@@ -306,7 +492,8 @@ Be specific, realistic, and actionable in your planning."""
         
         return fixed
 
-    def _enrich_plan_with_tools(self, plan_data: Dict[str, Any], original_goal: str) -> Dict[str, Any]:
+    @timing_decorator
+    async def _enrich_plan_with_tools(self, plan_data: Dict[str, Any], original_goal: str) -> Dict[str, Any]:
         """
         Enrich the plan with placeholder messages for missing APIs.
         This method provides graceful handling when external APIs are not available.
@@ -320,8 +507,8 @@ Be specific, realistic, and actionable in your planning."""
                     "suggestion": "Add TAVILY_API_KEY to your .env file to enable web search enrichment"
                 },
                 "weather_info": {
-                    "status": "unavailable", 
-                    "message": "Weather information requires OpenWeatherMap API key",
+                    "status": "partial", 
+                    "message": "Weather information is included for each day if available.",
                     "suggestion": "Add OPENWEATHER_API_KEY to your .env file to enable weather data"
                 },
                 "enriched_at": datetime.now().isoformat(),
@@ -333,21 +520,17 @@ Be specific, realistic, and actionable in your planning."""
             for day in plan_data.get("daily_breakdown", []):
                 topics = day.get("research_topics", [])
                 all_research_topics.extend(topics)
-            
+                # Add weather info for each day if city and date are available
+                city = day.get("location") or plan_data.get("goal", "").split()[-1]  # crude guess if not present
+                date_str = day.get("date")
+                if city and date_str:
+                    weather = await get_weather_forecast(city, date_str)
+                    day["weather_forecast"] = weather
+                else:
+                    day["weather_forecast"] = "No city/date info for weather."
             if all_research_topics:
                 plan_data["enrichment"]["research_topics_found"] = all_research_topics[:5]  # Show first 5 topics
                 plan_data["enrichment"]["web_search_results"]["topics_to_research"] = all_research_topics[:5]
-            
-            # Check for weather-relevant days
-            weather_days = []
-            for day in plan_data.get("daily_breakdown", []):
-                if day.get("weather_relevant", False):
-                    weather_days.append(day)
-            
-            if weather_days:
-                plan_data["enrichment"]["weather_info"]["weather_relevant_days"] = len(weather_days)
-                plan_data["enrichment"]["weather_info"]["message"] = f"Weather information would be helpful for {len(weather_days)} day(s) in your plan"
-            
             return plan_data
             
         except Exception as e:
@@ -561,7 +744,8 @@ Be specific, realistic, and actionable in your planning."""
             logger.error(f"Error formatting plan output: {e}")
             return f"Error formatting plan: {e}"
 
-    def create_and_save_plan(self, goal: str, start_date: Optional[str] = None, save_to_db: bool = True) -> Dict[str, Any]:
+    @timing_decorator
+    def create_and_save_plan(self, goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
         """
         Create a plan and optionally save it to the database.
         
@@ -569,13 +753,15 @@ Be specific, realistic, and actionable in your planning."""
             goal (str): The goal to plan for
             start_date (Optional[str]): Start date in YYYY-MM-DD format
             save_to_db (bool): Whether to save the plan to the database
+            num_days (int): Number of days in the itinerary (default 15)
+            user_prefs (dict): User preferences for personalization
             
         Returns:
             Dict[str, Any]: Complete plan data with database ID if saved
         """
         try:
             # Generate the plan
-            plan_data = self.generate_plan(goal, start_date)
+            plan_data = self.generate_plan(goal, start_date, num_days=num_days, user_prefs=user_prefs)
             
             # Save to database if requested
             if save_to_db:
@@ -590,7 +776,7 @@ Be specific, realistic, and actionable in your planning."""
 
 
 # Convenience functions for easy usage
-def create_plan(goal: str, start_date: Optional[str] = None, save_to_db: bool = True) -> str:
+def create_plan(goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> str:
     """
     Create a formatted plan for the given goal.
     
@@ -598,13 +784,15 @@ def create_plan(goal: str, start_date: Optional[str] = None, save_to_db: bool = 
         goal (str): The goal to plan for
         start_date (Optional[str]): Start date in YYYY-MM-DD format
         save_to_db (bool): Whether to save the plan to the database
+        num_days (int): Number of days in the itinerary (default 15)
+        user_prefs (dict): User preferences for personalization
         
     Returns:
         str: Formatted plan string
     """
     try:
         agent = TaskPlanningAgent()
-        plan_data = agent.create_and_save_plan(goal, start_date, save_to_db)
+        plan_data = agent.create_and_save_plan(goal, start_date, save_to_db, num_days=num_days, user_prefs=user_prefs)
         return agent.format_plan_output(plan_data)
     except Exception as e:
         return f"Error creating plan: {e}"

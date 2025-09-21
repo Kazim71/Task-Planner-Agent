@@ -19,17 +19,12 @@ def tavily_web_search(query: str) -> str:
     """
     # Validate input
     if not query or not query.strip():
-        raise ValueError("Query cannot be empty")
-    
+        return "Web search unavailable: Query cannot be empty."
     # Get API key from environment
     api_key = os.getenv('TAVILY_API_KEY')
     if not api_key:
-        raise ValueError("TAVILY_API_KEY environment variable not found")
-    
-    # Tavily API endpoint
+        return "Web search unavailable: TAVILY_API_KEY environment variable not found."
     url = "https://api.tavily.com/search"
-    
-    # Request payload
     payload = {
         "api_key": api_key,
         "query": query.strip(),
@@ -40,14 +35,9 @@ def tavily_web_search(query: str) -> str:
     }
     
     try:
-        # Make API request
-        response = requests.post(url, json=payload, timeout=30)
+        response = requests.post(url, json=payload, timeout=10)
         response.raise_for_status()
-        
-        # Parse response
         data = response.json()
-        
-        # Format results
         if 'results' in data and data['results']:
             results = []
             for i, result in enumerate(data['results'], 1):
@@ -55,31 +45,27 @@ def tavily_web_search(query: str) -> str:
                 url = result.get('url', 'No URL')
                 content = result.get('content', 'No content')
                 results.append(f"{i}. {title}\n   URL: {url}\n   Content: {content}\n")
-            
-            # Include answer if available
             answer = data.get('answer', '')
             if answer:
                 results.insert(0, f"Answer: {answer}\n\n")
-            
             return "".join(results)
         else:
             return "No search results found"
-            
     except requests.exceptions.Timeout:
-        return "Error: Request timed out. Please try again."
+        return "Web search timeout. Please try again later."
     except requests.exceptions.ConnectionError:
-        return "Error: Unable to connect to Tavily API. Please check your internet connection."
+        return "Web search unavailable: Unable to connect to Tavily API."
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 401:
-            return "Error: Invalid API key. Please check your TAVILY_API_KEY."
+            return "Web search unavailable: Invalid API key."
         elif e.response.status_code == 429:
-            return "Error: Rate limit exceeded. Please try again later."
+            return "Web search unavailable: Rate limit exceeded."
         else:
-            return f"Error: HTTP {e.response.status_code} - {e.response.text}"
+            return f"Web search unavailable: HTTP {e.response.status_code} - {e.response.text}"
     except requests.exceptions.RequestException as e:
-        return f"Error: Request failed - {str(e)}"
+        return f"Web search unavailable: Request failed - {str(e)}"
     except Exception as e:
-        return f"Error: Unexpected error occurred - {str(e)}"
+        return "Web search unavailable: Unexpected error."
 
 
 def get_weather(city: str) -> str:
