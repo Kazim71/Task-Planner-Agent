@@ -163,13 +163,13 @@ Be specific, realistic, and actionable in your planning."""
         from exceptions import ExternalServiceError
         import time as _time
         max_attempts = 3
-        attempt = 0
+        delay_seconds = 2
         last_exception = None
         prompts = [
             f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
             f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\n\nReturn only the JSON response, no additional text."""
         ]
-        while attempt < max_attempts:
+        for attempt in range(max_attempts):
             prompt = prompts[0] if attempt == 0 else prompts[1]
             logger.debug(f"Prompt length: {len(prompt)} characters (attempt {attempt+1})")
             logger.info(f"Sending request to Gemini API (attempt {attempt+1})")
@@ -192,30 +192,23 @@ Be specific, realistic, and actionable in your planning."""
                 logger.info(f"Response text length: {len(response.text)} characters")
                 logger.debug("Parsing JSON response from Gemini")
                 logger.debug(f"Raw Gemini response: {response.text}")
-                parse_attempt = 0
-                while parse_attempt < max_attempts:
-                    try:
-                        logger.info(f"JSON parsing attempt {parse_attempt+1} for Gemini response (API attempt {attempt+1})")
-                        plan_data = self._parse_json_response(response.text)
-                        logger.info("Successfully parsed plan data from Gemini response")
-                        logger.info("Enriching plan with external tools")
-                        enrichment_start = time.time()
-                        enriched_plan = self._enrich_plan_with_tools(plan_data, goal)
-                        enrichment_time = time.time() - enrichment_start
-                        logger.info(f"Plan enrichment completed in {enrichment_time:.3f}s")
-                        total_time = time.time() - start_time
-                        logger.info(f"Plan generation completed successfully in {total_time:.3f}s")
-                        logger.info(f"Generated plan with {len(enriched_plan.get('steps', []))} steps")
-                        return enriched_plan
-                    except Exception as e:
-                        logger.error(f"JSON parsing failed on parse attempt {parse_attempt+1} (API attempt {attempt+1}): {e}")
-                        last_exception = e
-                        parse_attempt += 1
-                        if parse_attempt < max_attempts:
-                            logger.info("Retrying JSON parsing after 1 second...")
-                            _time.sleep(1)
-                # If all parsing attempts fail for this API response, break to next API attempt
-                logger.info(f"All JSON parsing attempts failed for API attempt {attempt+1}.")
+                try:
+                    logger.info(f"JSON parsing for Gemini response (API attempt {attempt+1})")
+                    plan_data = self._parse_json_response(response.text)
+                    logger.info("Successfully parsed plan data from Gemini response")
+                    logger.info("Enriching plan with external tools")
+                    enrichment_start = time.time()
+                    enriched_plan = self._enrich_plan_with_tools(plan_data, goal)
+                    enrichment_time = time.time() - enrichment_start
+                    logger.info(f"Plan enrichment completed in {enrichment_time:.3f}s")
+                    total_time = time.time() - start_time
+                    logger.info(f"Plan generation completed successfully in {total_time:.3f}s")
+                    logger.info(f"Generated plan with {len(enriched_plan.get('steps', []))} steps")
+                    return enriched_plan
+                except Exception as e:
+                    logger.error(f"JSON parsing failed (API attempt {attempt+1}): {e}")
+                    last_exception = e
+                    # Do not retry JSON parsing, only retry API call
             except Exception as e:
                 api_response_time = time.time() - api_start_time
                 logger.error(f"Gemini API call failed after {api_response_time:.3f}s: {e}")
@@ -229,10 +222,9 @@ Be specific, realistic, and actionable in your planning."""
                     request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
                 )
                 last_exception = e
-            attempt += 1
-            if attempt < max_attempts:
-                logger.info("Retrying Gemini API call after 1 second...")
-                _time.sleep(1)
+            if attempt < max_attempts - 1:
+                logger.info(f"Retrying Gemini API call after {delay_seconds} seconds...")
+                time.sleep(delay_seconds)
         logger.error(f"All attempts to parse Gemini response failed. Last error: {last_exception}")
         raise ExternalServiceError(
             message=f"Failed to parse Gemini response after {max_attempts} attempts: {last_exception}",
