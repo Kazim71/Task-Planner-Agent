@@ -8,7 +8,19 @@ import json
 import os
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./task_planner.db")
+
+# Read DATABASE_URL and validate
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is missing. Please set it in your deployment environment (e.g., Vercel dashboard). Example: postgresql://user:password@host:port/dbname")
+
+# Optionally, auto-convert postgres:// to postgresql:// for compatibility
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Validate the URL format (basic check)
+if not (DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("sqlite://")):
+    raise RuntimeError(f"DATABASE_URL is invalid or unsupported: {DATABASE_URL}\nIt must start with postgresql:// or sqlite://")
 
 # Create SQLAlchemy engine
 engine = create_engine(
