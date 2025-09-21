@@ -391,7 +391,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ## 🤖 AI Tool Usage Disclosure
 
-This project was developed with the assistance of **Cursor AI**, an AI-powered code generation tool. The following aspects of the project were created with AI assistance:
+This project was developed with the assistance of **Github Copilot Agent**, an AI-powered code generation tool. The following aspects of the project were created with AI assistance:
 
 - **Code Structure**: Initial project architecture and file organization
 - **API Integration**: Implementation of external API integrations (Gemini, Tavily, OpenWeatherMap)
@@ -412,7 +412,7 @@ The AI assistance was used to accelerate development and provide boilerplate cod
 
 This project is open source and available under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -422,7 +422,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📞 Support
+##  Support
 
 If you encounter any issues or have questions:
 
@@ -430,15 +430,11 @@ If you encounter any issues or have questions:
 2. Create a new issue with detailed information
 3. Include error messages and steps to reproduce
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Google Gemini** for AI-powered plan generation
 - **Tavily** for web search capabilities
 - **OpenWeatherMap** for weather data
 - **FastAPI** for the excellent web framework
 - **SQLAlchemy** for database operations
-- **Cursor AI** for development assistance
-
----
-
-**Made with ❤️ and AI assistance**
+- **Github Copilot** for development assistance
