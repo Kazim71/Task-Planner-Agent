@@ -357,7 +357,23 @@ Always return your response in the following JSON format:
 Be specific, realistic, and actionable in your planning."""
 
     @timing_decorator
-    async def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None, departure_city: str = None, citizenship: str = None) -> Dict[str, Any]:
+    async def generate_plan(
+        self,
+        goal: str,
+        start_date: Optional[str] = None,
+        num_days: int = 15,
+        user_prefs: dict = None,
+        departure_city: str = None,
+        citizenship: str = None,
+        budget: str = None,
+        skill_level: str = None,
+        learning_style: str = None,
+        resources: str = None,
+        team_size: str = None,
+        tools: str = None,
+        constraints: str = None,
+        context: str = None
+    ) -> Dict[str, Any]:
         """
         Generate a structured plan for the given goal.
         Args:
@@ -375,13 +391,24 @@ Be specific, realistic, and actionable in your planning."""
         from typing import Any, Dict
         if not goal or not goal.strip():
             raise ValueError("Goal cannot be empty")
-        # Use tomorrow as default start date if not provided
+        # Always use current date as base for future dates
+        today = date.today()
         if not start_date:
-            start_dt = date.today() + timedelta(days=1)
+            start_dt = today + timedelta(days=1)
             start_date = start_dt.strftime("%Y-%m-%d")
         else:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
-        # Generate itinerary dates
+            # If user provides a date in the past, use tomorrow
+            try:
+                user_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+                if user_dt < today:
+                    start_dt = today + timedelta(days=1)
+                    start_date = start_dt.strftime("%Y-%m-%d")
+                else:
+                    start_dt = user_dt
+            except Exception:
+                start_dt = today + timedelta(days=1)
+                start_date = start_dt.strftime("%Y-%m-%d")
+        # Generate itinerary dates (always future)
         itinerary_dates = get_itinerary_dates(start_dt, num_days)
         
         start_time = time.time()
@@ -392,23 +419,86 @@ Be specific, realistic, and actionable in your planning."""
         max_attempts = 3
         delay_seconds = 5
         last_exception = None
-        # Prepare user preferences for prompt
-        if user_prefs is None:
-            user_prefs = collect_user_preferences()
-        interests = user_prefs.get('interests', 'sightseeing, local cuisine, culture')
-        # Collect departure city and citizenship from arguments or user_prefs
-        if not departure_city:
-            departure_city = user_prefs.get('departure_city', 'Unknown')
-        if not citizenship:
-            citizenship = user_prefs.get('citizenship', 'Unknown')
-        budget = user_prefs.get('budget', 'Moderate')
-        # Replace placeholders in the system prompt and goal
-        prompt_base = self.system_prompt.replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
-        goal_filled = goal.strip().replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
-        prompts = [
-            f"""{prompt_base}\n\nGoal: {goal_filled}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks, using the provided itinerary dates\n- Personalize recommendations for the user's interests, citizenship, and budget\n- Replace all [placeholders] in the plan with actual user data\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
-            f"""{prompt_base}\n\nGoal: {goal_filled}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nReturn only the JSON response, no additional text."""
-        ]
+        # --- Adaptive Plan Type Detection ---
+        def detect_plan_type(goal_text: str) -> str:
+            t = goal_text.lower()
+            if any(k in t for k in ["trip", "vacation", "travel", "visit", "go to"]):
+                return "travel"
+            if any(k in t for k in ["learn", "study", "roadmap", "course", "skill"]):
+                return "learning"
+            if any(k in t for k in ["build", "create", "develop", "project", "launch"]):
+                return "project"
+            return "general"
+
+        plan_type = detect_plan_type(goal)
+
+        # --- Build AI Prompt for Each Plan Type ---
+        prompt_base = self.system_prompt
+        goal_filled = goal.strip()
+        prompt_details = ""
+        if plan_type == "travel":
+            prompt_details = f"""
+Plan Type: Travel
+Departure City: {departure_city or 'Unknown'}
+Budget: {budget or 'Moderate'}
+Citizenship: {citizenship or 'Unknown'}
+Start Date: {start_date}
+Itinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}
+Please create a detailed, actionable travel plan. Include:
+- Day-by-day itinerary
+- Recommendations for activities, logistics, and budgeting
+- Personalize for departure city, citizenship, and budget
+- Suggest research topics and note if weather is relevant
+- Use sensible defaults if any info is missing
+Return only the JSON response, no extra text.
+"""
+        elif plan_type == "learning":
+            prompt_details = f"""
+Plan Type: Learning
+Current Skill Level: {skill_level or 'Beginner'}
+Learning Style: {learning_style or 'Any'}
+Available Resources: {resources or 'General'}
+Start Date: {start_date}
+Itinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}
+Please create a structured learning roadmap. Include:
+- Day-by-day curriculum and milestones
+- Resource recommendations
+- Adapt to skill level and learning style
+- Suggest research topics
+- Use sensible defaults if any info is missing
+Return only the JSON response, no extra text.
+"""
+        elif plan_type == "project":
+            prompt_details = f"""
+Plan Type: Project
+Team Size: {team_size or '1'}
+Tools/Technology: {tools or 'General'}
+Constraints: {constraints or 'None'}
+Start Date: {start_date}
+Itinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}
+Please create a project plan. Include:
+- Milestones, deliverables, and daily tasks
+- Team coordination and tool usage
+- Highlight constraints and risk mitigation
+- Suggest research topics
+- Use sensible defaults if any info is missing
+Return only the JSON response, no extra text.
+"""
+        else:
+            prompt_details = f"""
+Plan Type: General
+Additional Context: {context or 'None'}
+Start Date: {start_date}
+Itinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}
+Please create a general actionable plan. Include:
+- Day-by-day breakdown
+- Success metrics and challenges
+- Use sensible defaults if any info is missing
+Return only the JSON response, no extra text.
+"""
+
+        prompt = f"{prompt_base}\n\nGoal: {goal_filled}\n{prompt_details}"
+        prompts = [prompt]
         import asyncio
         for attempt in range(max_attempts):
             prompt = prompts[0] if attempt == 0 else prompts[1]

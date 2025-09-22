@@ -102,6 +102,20 @@ class PlanRequest(BaseModel):
     goal: str = Field(..., min_length=1, max_length=500, description="The goal to plan for")
     start_date: Optional[str] = Field(None, description="Start date in YYYY-MM-DD format")
     save_to_db: bool = Field(True, description="Whether to save the plan to database")
+    # Adaptive fields for travel
+    departure_city: Optional[str] = Field(None, description="Departure city (for travel plans)")
+    budget: Optional[str] = Field(None, description="Budget (for travel plans)")
+    citizenship: Optional[str] = Field(None, description="Citizenship (for travel plans)")
+    # Adaptive fields for learning
+    skill_level: Optional[str] = Field(None, description="Current skill level (for learning plans)")
+    learning_style: Optional[str] = Field(None, description="Learning style (for learning plans)")
+    resources: Optional[str] = Field(None, description="Available resources (for learning plans)")
+    # Adaptive fields for project
+    team_size: Optional[str] = Field(None, description="Team size (for project plans)")
+    tools: Optional[str] = Field(None, description="Tools/technology (for project plans)")
+    constraints: Optional[str] = Field(None, description="Constraints (for project plans)")
+    # General
+    context: Optional[str] = Field(None, description="Additional context (for general plans)")
 
 class PlanResponse(BaseModel):
     success: bool
@@ -182,7 +196,17 @@ async def create_plan_endpoint(plan_request: PlanRequest):
             validated_data = InputValidator.validate_plan_request({
                 "goal": plan_request.goal,
                 "start_date": plan_request.start_date,
-                "save_to_db": plan_request.save_to_db
+                "save_to_db": plan_request.save_to_db,
+                "departure_city": plan_request.departure_city,
+                "budget": plan_request.budget,
+                "citizenship": plan_request.citizenship,
+                "skill_level": plan_request.skill_level,
+                "learning_style": plan_request.learning_style,
+                "resources": plan_request.resources,
+                "team_size": plan_request.team_size,
+                "tools": plan_request.tools,
+                "constraints": plan_request.constraints,
+                "context": plan_request.context
             })
         except ValidationError as e:
             logger.warning(f"Validation error: {e.message}")
@@ -227,9 +251,20 @@ async def create_plan_endpoint(plan_request: PlanRequest):
         
         # Generate the plan
         try:
+            # Pass all adaptive fields to the agent
             plan_data = await agent.generate_plan(
                 goal=validated_data["goal"],
-                start_date=validated_data["start_date"]
+                start_date=validated_data["start_date"],
+                departure_city=validated_data.get("departure_city"),
+                budget=validated_data.get("budget"),
+                citizenship=validated_data.get("citizenship"),
+                skill_level=validated_data.get("skill_level"),
+                learning_style=validated_data.get("learning_style"),
+                resources=validated_data.get("resources"),
+                team_size=validated_data.get("team_size"),
+                tools=validated_data.get("tools"),
+                constraints=validated_data.get("constraints"),
+                context=validated_data.get("context")
             )
             logger.info("Plan generated successfully")
         except Exception as e:

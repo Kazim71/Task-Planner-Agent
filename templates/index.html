@@ -1,3 +1,71 @@
+        <script>
+        // --- Adaptive Form Logic ---
+        const adaptiveFieldsConfig = {
+            travel: [
+                { label: 'Departure City', name: 'departure_city', type: 'text', placeholder: 'e.g. New York, London', optional: true },
+                { label: 'Budget', name: 'budget', type: 'text', placeholder: 'e.g. $2000, Moderate, Luxury', optional: true },
+                { label: 'Travel Dates', name: 'travel_dates', type: 'text', placeholder: 'e.g. Oct 1-10, 2025', optional: true }
+            ],
+            learning: [
+                { label: 'Current Skill Level', name: 'skill_level', type: 'text', placeholder: 'e.g. Beginner, Intermediate', optional: true },
+                { label: 'Preferred Learning Style', name: 'learning_style', type: 'text', placeholder: 'e.g. Visual, Hands-on, Reading', optional: true },
+                { label: 'Preferred Resources', name: 'resources', type: 'text', placeholder: 'e.g. Books, Online Courses', optional: true }
+            ],
+            project: [
+                { label: 'Team Size', name: 'team_size', type: 'text', placeholder: 'e.g. 1, 5, 10+', optional: true },
+                { label: 'Key Tools/Platforms', name: 'tools', type: 'text', placeholder: 'e.g. Jira, Figma, Python', optional: true },
+                { label: 'Constraints', name: 'constraints', type: 'text', placeholder: 'e.g. Budget, Timeline, Tech Stack', optional: true }
+            ]
+        };
+
+        function detectPlanType(text) {
+            // Simple keyword-based detection (can be replaced with backend AI call)
+            const t = text.toLowerCase();
+            if (/(travel|trip|vacation|flight|hotel|itinerary|destination)/.test(t)) return 'travel';
+            if (/(learn|course|study|skill|certification|education|training|syllabus|roadmap)/.test(t)) return 'learning';
+            if (/(project|team|launch|build|develop|deploy|collaborate|deliverable|milestone)/.test(t)) return 'project';
+            return null;
+        }
+
+        function renderAdaptiveFields(planType) {
+            const container = document.getElementById('adaptiveFields');
+            container.innerHTML = '';
+            // Only show adaptive fields if a plan type is detected
+            if (!planType || !adaptiveFieldsConfig[planType]) return;
+            adaptiveFieldsConfig[planType].forEach(field => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                const label = document.createElement('label');
+                label.setAttribute('for', field.name);
+                // All adaptive fields are optional and marked as such
+                label.textContent = field.label + ' (optional)';
+                let input;
+                if (field.type === 'text') {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                } else {
+                    input = document.createElement(field.type);
+                }
+                input.id = field.name;
+                input.name = field.name;
+                input.placeholder = field.placeholder || '';
+                div.appendChild(label);
+                div.appendChild(input);
+                container.appendChild(div);
+            });
+        }
+
+        // Listen for changes in the task description to adaptively show fields
+        document.getElementById('goal').addEventListener('input', function(e) {
+            const planType = detectPlanType(e.target.value);
+            renderAdaptiveFields(planType);
+        });
+        // On page load, render adaptive fields if any text is present
+        window.addEventListener('DOMContentLoaded', function() {
+            const planType = detectPlanType(document.getElementById('goal').value);
+            renderAdaptiveFields(planType);
+        });
+        </script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -376,60 +444,43 @@
             <div class="form-section">
                 <h2>Create a New Plan</h2>
                 <form id="planForm">
+                    <!-- Universal fields: always visible -->
                     <div class="form-group">
-                        <label for="goal">What would you like to accomplish?</label>
+                        <label for="goal">Task Description</label>
                         <textarea 
                             id="goal" 
                             name="goal" 
-                            placeholder="Describe your goal in detail. For example: 'Learn Python programming and build a web application' or 'Plan a 2-week vacation to Japan'"
+                            placeholder="Describe your task or project in detail. For example: 'Launch a new product', 'Organize a conference', 'Write a book', etc."
                             required
                         ></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="departure_city">Departure City</label>
-                        <input 
-                            type="text" 
-                            id="departure_city" 
-                            name="departure_city" 
-                            placeholder="e.g. New York, London, Tokyo" 
-                            required
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="citizenship">Citizenship</label>
-                        <input 
-                            type="text" 
-                            id="citizenship" 
-                            name="citizenship" 
-                            placeholder="e.g. United States, Canada, India" 
-                            required
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="budget">Budget</label>
-                        <input 
-                            type="text" 
-                            id="budget" 
-                            name="budget" 
-                            placeholder="e.g. Moderate, Luxury, $2000, etc." 
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="preferences">Travel Preferences (comma separated)</label>
-                        <input 
-                            type="text" 
-                            id="preferences" 
-                            name="preferences" 
-                            placeholder="e.g. sightseeing, local cuisine, hiking, museums" 
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="start_date">Start Date (Optional)</label>
+                        <label for="start_date">Start Date</label>
                         <input 
                             type="date" 
                             id="start_date" 
-                            name="start_date"
+                            name="start_date" 
                         >
+                    </div>
+                    <div class="form-group">
+                        <label for="priority">Priority Level (optional)</label>
+                        <input 
+                            type="text" 
+                            id="priority" 
+                            name="priority" 
+                            placeholder="e.g. High, Medium, Low"
+                        >
+                    </div>
+                    <!-- Adaptive fields: injected dynamically based on plan type -->
+                    <div id="adaptiveFields"></div>
+                    <!-- Universal additional context field, only for GENERAL type -->
+                    <div class="form-group" id="contextGroup" style="display:none;">
+                        <label for="context">Additional Context (optional)</label>
+                        <textarea 
+                            id="context" 
+                            name="context" 
+                            placeholder="Add any extra information, requirements, or background here."
+                        ></textarea>
                     </div>
                     <div class="form-group">
                         <div class="checkbox-group">
@@ -453,72 +504,67 @@
                 </div>
             </div>
 
-            <!-- Results Section -->
-            <div class="result-section" id="resultSection">
-                <h3>Your Generated Plan</h3>
-                <div class="plan-output" id="planOutput"></div>
-            </div>
+            // --- SMART Adaptive Form Logic ---
+            const adaptiveFieldsConfig = {
+                travel: [
+                    { label: 'Departure City', name: 'departure_city', type: 'text', placeholder: 'e.g. New York, London', optional: true },
+                    { label: 'Budget', name: 'budget', type: 'text', placeholder: 'e.g. $2000, Moderate, Luxury', optional: true },
+                    { label: 'Citizenship', name: 'citizenship', type: 'text', placeholder: 'e.g. US, Canada, India', optional: true }
+                ],
+                learning: [
+                    { label: 'Current Skill Level', name: 'skill_level', type: 'text', placeholder: 'e.g. Beginner, Intermediate', optional: true },
+                    { label: 'Learning Style', name: 'learning_style', type: 'text', placeholder: 'e.g. Visual, Hands-on, Reading', optional: true },
+                    { label: 'Available Resources', name: 'resources', type: 'text', placeholder: 'e.g. Books, Online Courses', optional: true }
+                ],
+                project: [
+                    { label: 'Team Size', name: 'team_size', type: 'text', placeholder: 'e.g. 1, 5, 10+', optional: true },
+                    { label: 'Tools/Technology', name: 'tools', type: 'text', placeholder: 'e.g. Jira, Figma, Python', optional: true },
+                    { label: 'Constraints', name: 'constraints', type: 'text', placeholder: 'e.g. Budget, Timeline, Tech Stack', optional: true }
+                ]
+            };
 
-            <!-- Plans List Section -->
-            <div class="plans-section">
-                <div class="plans-header">
-                    <h2>Saved Plans</h2>
-                    <button class="btn btn-small" onclick="loadPlans()">Refresh</button>
-                </div>
-                
-                <div class="search-box">
-                    <input 
-                        type="text" 
-                        id="searchInput" 
-                        placeholder="Search plans by goal..."
-                        onkeyup="searchPlans()"
-                    >
-                </div>
-                
-                <div class="plans-list" id="plansList">
-                    <p>Loading saved plans...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Set default start date to today
-        document.getElementById('start_date').value = new Date().toISOString().split('T')[0];
-
-        // Form submission
-        document.getElementById('planForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const goal = formData.get('goal');
-            const departureCity = formData.get('departure_city');
-            const citizenship = formData.get('citizenship');
-            const budget = formData.get('budget');
-            const preferences = formData.get('preferences');
-            const startDate = formData.get('start_date');
-            const saveToDb = formData.get('save_to_db') === 'on';
-
-            // Clear previous messages
-            clearMessages();
-
-            if (!goal.trim()) {
-                showMessage('Please enter a goal', 'error');
-                return;
-            }
-            if (!departureCity.trim()) {
-                showMessage('Please enter your departure city', 'error');
-                return;
-            }
-            if (!citizenship.trim()) {
-                showMessage('Please enter your citizenship', 'error');
-                return;
+            function detectPlanType(text) {
+                // Keyword-based detection for plan type
+                const t = text.toLowerCase();
+                if (/(trip|vacation|travel|visit|go to)/.test(t)) return 'travel';
+                if (/(learn|study|roadmap|course|skill)/.test(t)) return 'learning';
+                if (/(build|create|develop|project|launch)/.test(t)) return 'project';
+                return 'general';
             }
 
-            // Show loading state
-            showLoading(true);
-            document.getElementById('resultSection').style.display = 'none';
+            function renderAdaptiveFields(planType) {
+                const container = document.getElementById('adaptiveFields');
+                container.innerHTML = '';
+                // Show context field only for general
+                document.getElementById('contextGroup').style.display = planType === 'general' ? '' : 'none';
+                if (!planType || planType === 'general' || !adaptiveFieldsConfig[planType]) return;
+                adaptiveFieldsConfig[planType].forEach(field => {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    const label = document.createElement('label');
+                    label.setAttribute('for', field.name);
+                    label.textContent = field.label + ' (optional)';
+                    let input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = field.name;
+                    input.name = field.name;
+                    input.placeholder = field.placeholder || '';
+                    div.appendChild(label);
+                    div.appendChild(input);
+                    container.appendChild(div);
+                });
+            }
 
+            // Initially hide all adaptive fields and context
+            window.addEventListener('DOMContentLoaded', function() {
+                renderAdaptiveFields('general');
+            });
+
+            // Listen for changes in the task description to adaptively show fields
+            document.getElementById('goal').addEventListener('input', function(e) {
+                const planType = detectPlanType(e.target.value);
+                renderAdaptiveFields(planType);
+            });
             try {
                 console.log('Sending request to /plan endpoint...');
                 const response = await fetch('/plan', {
@@ -528,12 +574,11 @@
                     },
                     body: JSON.stringify({
                         goal: goal.trim(),
-                        start_date: startDate || null,
+                        timeline: timeline.trim(),
+                        priority: priority.trim(),
+                        context: context.trim(),
                         save_to_db: saveToDb,
-                        departure_city: departureCity.trim(),
-                        citizenship: citizenship.trim(),
-                        budget: budget.trim(),
-                        preferences: preferences.trim()
+                        ...adaptiveFields
                     })
                 });
                 
