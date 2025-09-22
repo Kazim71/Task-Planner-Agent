@@ -1,62 +1,185 @@
 
+
 # Task Planner Agent
 
-[![Render Status](https://img.shields.io/badge/Live%20Demo-Render-blue?logo=render&style=flat-square)](https://task-planner-agent-ejj8.onrender.com/)
+[![Production Status](https://img.shields.io/badge/Live%20Demo-Railway-green?logo=railway&style=flat-square)](https://task-planner-agent-production.up.railway.app/)
 
-**Live Demo:** [https://task-planner-agent-ejj8.onrender.com/](https://task-planner-agent-ejj8.onrender.com/)
+**Live Demo:** [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)
 
+---
 
-An intelligent AI-powered task planning application that leverages Google Gemini 2.5 Pro to transform natural language goals into structured, actionable day-by-day plans. The application enriches plans with web search results and weather information to provide comprehensive planning assistance.
+**Current Status:** ✅ Production deployed on Railway (asia-southeast1)
 
-## 🚀 Features
+---
 
-- **🧠 AI-Powered Planning**: Uses Google Gemini 2.5 Pro to generate intelligent, structured plans
-- **🔍 Web Search Integration**: Enriches plans with relevant research using Tavily API
-- **🌤️ Weather Information**: Includes weather data when relevant to outdoor activities
-- **💾 Database Storage**: Saves and retrieves plans using SQLite with SQLAlchemy ORM
-- **🌐 Web Interface**: Clean, responsive web frontend with real-time plan generation
-- **🔌 REST API**: Full REST API for programmatic access and integration
-- **📱 Mobile Responsive**: Works seamlessly on desktop and mobile devices
+## Technology Stack
 
-## 🏗️ Architecture
+- **Backend:** Python 3.12.10
+- **Framework:** Flask (API compatible with FastAPI)
+- **AI:** Google Gemini AI API
+- **Deployment:** Railway (asia-southeast1 region)
+- **WSGI Server:** Gunicorn with Uvicorn workers
+- **Process Management:** Procfile
 
-```mermaid
-graph TB
-    subgraph "Frontend Layer"
-        A[Web Browser] --> B[Jinja2 Templates]
-        B --> C[HTML/CSS/JavaScript]
-    end
-    
-    subgraph "API Layer"
-        D[FastAPI Server] --> E[Request Validation]
-        E --> F[Route Handlers]
-    end
-    
-    subgraph "Business Logic"
-        F --> G[Task Planning Agent]
-        G --> H[Google Gemini 2.5 Pro]
-        G --> I[Web Search Tool]
-        G --> J[Weather Tool]
-    end
-    
-    subgraph "Data Layer"
-        K[SQLite Database] --> L[SQLAlchemy ORM]
-        L --> M[Plan Models]
-    end
-    
-    subgraph "External Services"
-        N[Tavily API] --> O[Web Search Results]
-        P[OpenWeatherMap API] --> Q[Weather Data]
-    end
-    
-    A --> D
-    F --> G
-    G --> K
-    I --> N
-    J --> P
-    O --> G
-    Q --> G
+---
+
+## Key Features
+
+- AI-generated vacation and task plans
+- Date-based planning and scheduling
+- Persistent database storage of plans
+- REST API interface for programmatic access
+
+---
+
+## 🚀 Installation & Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd task-planner-agent
 ```
+
+### 2. Create Virtual Environment
+
+```bash
+python -m venv venv
+venv\Scripts\activate  # On Windows
+# or
+source venv/bin/activate  # On macOS/Linux
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Environment Variables
+
+Create a `.env` file in the project root with:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+# Optional for local DB:
+DATABASE_URL=sqlite:///./task_planner.db
+```
+
+---
+
+## Usage
+
+### Local Development
+
+```bash
+python main.py
+# or for hot reload (if using FastAPI):
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Visit [http://localhost:8000](http://localhost:8000) in your browser.
+
+### Production (Railway)
+
+Deployed and live at: [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)
+
+---
+
+## API Documentation
+
+### Base URL
+
+```
+https://task-planner-agent-production.up.railway.app/
+```
+
+### Endpoints
+
+#### 1. Web Interface
+```
+GET /
+```
+Returns the main web interface with goal input form.
+
+#### 2. Create Plan
+```
+POST /plan
+Content-Type: application/json
+
+{
+    "goal": "Plan a 2-week vacation to Goa",
+    "start_date": "2025-09-22",
+    "save_to_db": true
+}
+```
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Plan created successfully",
+    "plan_id": 1,
+    "plan_data": { ... },
+    "formatted_plan": "PLAN: Plan a 2-week vacation to Goa\n..."
+}
+```
+
+#### 3. Get All Plans
+```
+GET /plans?limit=10&search=vacation
+```
+
+#### 4. Get Specific Plan
+```
+GET /plans/{plan_id}
+```
+
+#### 5. Delete Plan
+```
+DELETE /plans/{plan_id}
+```
+
+#### 6. Health Check
+```
+GET /health
+```
+
+---
+
+## Environment Variables
+
+| Variable         | Description                        |
+|------------------|------------------------------------|
+| GEMINI_API_KEY   | Google Gemini API key (required)   |
+| DATABASE_URL     | Database URL (optional, default SQLite) |
+
+---
+
+## Deployment Status
+
+- **Production:** [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)
+- **Region:** asia-southeast1 (Railway)
+- **Process:** Gunicorn + Uvicorn workers, managed by Procfile
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Acknowledgments
+
+- Google Gemini for AI-powered plan generation
+- Railway for cloud deployment
+- Gunicorn & Uvicorn for production serving
+
+---
+
+## Support & Contributing
+
+Open to issues and pull requests. Please open an issue for bugs or feature requests.
 
 ## 📋 Prerequisites
 
@@ -359,42 +482,40 @@ The application includes comprehensive error handling for:
 - **Rate Limiting**: Implement rate limiting for production use
 
 
-## 🚀 Production Deployment (Render)
 
-This project is deployed and live on Render:
+## 🚀 Production Deployment (Railway)
 
-**🌐 [https://task-planner-agent-ejj8.onrender.com/](https://task-planner-agent-ejj8.onrender.com/)**
+This project is deployed and live on Railway:
+
+**🌐 [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)**
 
 You can use this link in your portfolio, resume, or share with recruiters.
 
-### Render Deployment Steps (for future updates)
+### Railway Deployment Steps (for future updates)
 
 1. Push your changes to the `main` branch on GitHub.
-2. Render will auto-deploy, or you can trigger a manual deploy from the Render dashboard.
+2. Railway will auto-deploy, or you can trigger a manual deploy from the Railway dashboard.
 3. The live app will be available at the above URL.
 
 **Python version and dependencies are pinned for reliability.**
 
 
+
 ### Production Deployment
 
-1. **Environment Setup**:
-   ```bash
-   export GEMINI_API_KEY="your_key"
-   export TAVILY_API_KEY="your_key"
-   export OPENWEATHER_API_KEY="your_key"
-   export DATABASE_URL="postgresql://user:pass@host:port/db"
-   ```
+1. **Environment Setup** (Railway Variables):
+    - `GEMINI_API_KEY`: Your Gemini API key
+    - `DATABASE_URL`: (Optional, defaults to SQLite if not set)
 
 2. **Install Production Dependencies**:
-   ```bash
-   pip install gunicorn
-   ```
+    ```bash
+    pip install gunicorn
+    ```
 
 3. **Run with Gunicorn**:
-   ```bash
-   gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
-   ```
+    ```bash
+    gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
+    ```
 
 ### Docker Deployment
 
@@ -410,6 +531,7 @@ EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
 
 ## 🤖 AI Tool Usage Disclosure
 
@@ -454,9 +576,10 @@ If you encounter any issues or have questions:
 
 ##  Acknowledgments
 
-- **Google Gemini** for AI-powered plan generation
-- **Tavily** for web search capabilities
-- **OpenWeatherMap** for weather data
-- **FastAPI** for the excellent web framework
-- **SQLAlchemy** for database operations
-- **Github Copilot** for development assistance
+**Google Gemini** for AI-powered plan generation
+**Tavily** for web search capabilities
+**OpenWeatherMap** for weather data
+**FastAPI** for the excellent web framework
+**SQLAlchemy** for database operations
+**Github Copilot** for development assistance
+**Railway** for cloud deployment

@@ -20,10 +20,17 @@ def tavily_web_search(query: str) -> str:
     # Validate input
     if not query or not query.strip():
         return "Web search unavailable: Query cannot be empty."
-    # Get API key from environment
+    # Get API key from environment and validate
     api_key = os.getenv('TAVILY_API_KEY')
-    if not api_key:
-        return "Web search unavailable: TAVILY_API_KEY environment variable not found."
+    if not api_key or len(api_key) < 10:
+        # Fallback: Provide a placeholder search result
+        return (
+            f"[FAKE SEARCH RESULTS]\n"
+            f"Query: {query}\n"
+            "1. Example Result Title\n   URL: https://example.com\n   Content: This is a placeholder search result because the Tavily API is unavailable.\n"
+            "2. Example Blog Post\n   URL: https://blog.example.com\n   Content: No real search was performed. This is a sample description.\n"
+            "Answer: No real-time web search available. Please add your TAVILY_API_KEY for live results.\n"
+        )
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": api_key,
@@ -34,6 +41,7 @@ def tavily_web_search(query: str) -> str:
         "max_results": 5
     }
     
+    import logging
     try:
         response = requests.post(url, json=payload, timeout=10)
         response.raise_for_status()
@@ -51,21 +59,15 @@ def tavily_web_search(query: str) -> str:
             return "".join(results)
         else:
             return "No search results found"
-    except requests.exceptions.Timeout:
-        return "Web search timeout. Please try again later."
-    except requests.exceptions.ConnectionError:
-        return "Web search unavailable: Unable to connect to Tavily API."
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 401:
-            return "Web search unavailable: Invalid API key."
-        elif e.response.status_code == 429:
-            return "Web search unavailable: Rate limit exceeded."
-        else:
-            return f"Web search unavailable: HTTP {e.response.status_code} - {e.response.text}"
-    except requests.exceptions.RequestException as e:
-        return f"Web search unavailable: Request failed - {str(e)}"
     except Exception as e:
-        return "Web search unavailable: Unexpected error."
+        logging.error(f"Tavily API failure: {e}", exc_info=True)
+        return (
+            f"[FAKE SEARCH RESULTS]\n"
+            f"Query: {query}\n"
+            "1. Example Result Title\n   URL: https://example.com\n   Content: This is a placeholder search result because the Tavily API is unavailable.\n"
+            "2. Example Blog Post\n   URL: https://blog.example.com\n   Content: No real search was performed. This is a sample description.\n"
+            "Answer: No real-time web search available. Please add your TAVILY_API_KEY for live results.\n"
+        )
 
 
 def get_weather(city: str) -> str:
@@ -86,10 +88,19 @@ def get_weather(city: str) -> str:
     if not city or not city.strip():
         raise ValueError("City name cannot be empty")
     
-    # Get API key from environment
+    # Get API key from environment and validate
     api_key = os.getenv('OPENWEATHER_API_KEY')
-    if not api_key:
-        raise ValueError("OPENWEATHER_API_KEY environment variable not found")
+    if not api_key or len(api_key) < 10:
+        # Fallback: Provide fake weather data
+        return (
+            f"[FAKE WEATHER DATA] for {city}\n"
+            "Temperature: 22.0°C (feels like 21.5°C)\n"
+            "Description: Partly cloudy\n"
+            "Humidity: 60%\n"
+            "Pressure: 1012 hPa\n"
+            "Wind: 3.5 m/s at 180°\n"
+            "Note: This is placeholder weather data. Add your OPENWEATHER_API_KEY for real forecasts."
+        )
     
     # OpenWeatherMap API endpoint
     url = "https://api.openweathermap.org/data/2.5/weather"
@@ -170,9 +181,3 @@ def test_weather():
         print(f"Weather Test Error: {e}")
 
 
-if __name__ == "__main__":
-    print("Testing tools.py functions...")
-    print("=" * 50)
-    test_tavily_search()
-    print("\n" + "=" * 50)
-    test_weather()

@@ -357,7 +357,7 @@ Always return your response in the following JSON format:
 Be specific, realistic, and actionable in your planning."""
 
     @timing_decorator
-    def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
+    async def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
         """
         Generate a structured plan for the given goal.
         Args:
@@ -409,7 +409,7 @@ Be specific, realistic, and actionable in your planning."""
             api_start_time = time.time()
             try:
                 try:
-                    response = self.model.generate_content(prompt)
+                    response = await self.model.generate_content(prompt)
                 except Exception as e:
                     logger.error(f"Gemini API call failed on attempt {attempt+1}: {e}")
                     last_exception = e
@@ -439,7 +439,7 @@ Be specific, realistic, and actionable in your planning."""
                     logger.info("Successfully parsed plan data from Gemini response")
                     logger.info("Enriching plan with external tools")
                     enrichment_start = time.time()
-                    enriched_plan = self._enrich_plan_with_tools(plan_data, goal)
+                    enriched_plan = await self._enrich_plan_with_tools(plan_data, goal)
                     enrichment_time = time.time() - enrichment_start
                     logger.info(f"Plan enrichment completed in {enrichment_time:.3f}s")
                     total_time = time.time() - start_time
@@ -792,7 +792,7 @@ Be specific, realistic, and actionable in your planning."""
             return f"Error formatting plan: {e}"
 
     @timing_decorator
-    def create_and_save_plan(self, goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
+    async def create_and_save_plan(self, goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
         """
         Create a plan and optionally save it to the database.
         
@@ -808,22 +808,19 @@ Be specific, realistic, and actionable in your planning."""
         """
         try:
             # Generate the plan
-            plan_data = self.generate_plan(goal, start_date, num_days=num_days, user_prefs=user_prefs)
-            
+            plan_data = await self.generate_plan(goal, start_date, num_days=num_days, user_prefs=user_prefs)
             # Save to database if requested
             if save_to_db:
                 plan_id = self.save_plan_to_database(plan_data)
                 plan_data["database_id"] = plan_id
-            
             return plan_data
-            
         except Exception as e:
             logger.error(f"Error creating and saving plan: {e}")
             raise
 
 
 # Convenience functions for easy usage
-def create_plan(goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> str:
+async def create_plan(goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> str:
     """
     Create a formatted plan for the given goal.
     
@@ -839,7 +836,7 @@ def create_plan(goal: str, start_date: Optional[str] = None, save_to_db: bool = 
     """
     try:
         agent = TaskPlanningAgent()
-        plan_data = agent.create_and_save_plan(goal, start_date, save_to_db, num_days=num_days, user_prefs=user_prefs)
+        plan_data = await agent.create_and_save_plan(goal, start_date, save_to_db, num_days=num_days, user_prefs=user_prefs)
         return agent.format_plan_output(plan_data)
     except Exception as e:
         return f"Error creating plan: {e}"

@@ -11,15 +11,13 @@ import os
 
 # Read DATABASE_URL and validate
 
-# Only load .env in local/dev, not in Vercel/production
-if os.getenv("VERCEL") != "1":
-    from dotenv import load_dotenv
-    load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 # Read and sanitize DATABASE_URL
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is missing. Please set it in your deployment environment (e.g., Vercel dashboard). Example: postgresql://user:password@host:port/dbname")
+    raise RuntimeError("DATABASE_URL environment variable is missing. Please set it in your deployment environment (e.g., Railway dashboard). Example: postgresql://user:password@host:port/dbname")
 
 # Remove any accidental quotes or psql prefix
 DATABASE_URL = DATABASE_URL.strip().replace("psql ", "")
