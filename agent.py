@@ -409,32 +409,25 @@ Be specific, realistic, and actionable in your planning."""
             logger.info(f"Sending request to Gemini API (attempt {attempt+1})")
             api_start_time = time.time()
             try:
-                try:
-                    response = await asyncio.wait_for(self.model.generate_content(prompt), timeout=60)
-                except asyncio.TimeoutError:
-                    logger.error(f"Gemini API call timed out after 60 seconds on attempt {attempt+1}")
-                    last_exception = Exception("Gemini API call timed out after 60 seconds")
-                    if attempt < max_attempts - 1:
-                        backoff = delay_seconds * (2 ** attempt)
-                        logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
-                        time.sleep(backoff)
-                    continue
-                except (ConnectionError, OSError) as e:
-                    logger.error(f"Connection error on Gemini API attempt {attempt+1}: {e}")
-                    last_exception = e
-                    if attempt < max_attempts - 1:
-                        backoff = delay_seconds * (2 ** attempt)
-                        logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
-                        time.sleep(backoff)
-                    continue
-                except Exception as e:
-                    logger.error(f"Gemini API call failed on attempt {attempt+1}: {e}")
-                    last_exception = e
-                    if attempt < max_attempts - 1:
-                        backoff = delay_seconds * (2 ** attempt)
-                        logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
-                        time.sleep(backoff)
-                    continue
+                response = self.model.generate_content(prompt)
+                # Robust Gemini API response validation
+                response_text = None
+                # Prefer .text if present and non-empty
+                if hasattr(response, 'text') and response.text:
+                    response_text = response.text
+                # If .text is missing/empty, try .parts (streaming)
+                elif hasattr(response, 'parts') and response.parts:
+                    first_part = response.parts[0] if len(response.parts) > 0 else None
+                    # Try .text on the first part if available
+                    if hasattr(first_part, 'text') and first_part.text:
+                        response_text = first_part.text
+                    elif isinstance(first_part, str):
+                        response_text = first_part
+                    elif first_part is not None:
+                        response_text = str(first_part)
+                # Final fallback: string conversion of response
+                if not response_text and response is not None:
+                    response_text = str(response)
                 api_response_time = time.time() - api_start_time
                 log_external_api_call(
                     logger=logger,
@@ -446,14 +439,14 @@ Be specific, realistic, and actionable in your planning."""
                     request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
                 )
                 logger.info(f"Received response from Gemini API in {api_response_time:.3f}s")
-                if not response.text:
-                    raise Exception("Empty response from Gemini API")
-                logger.info(f"Response text length: {len(response.text)} characters")
+                if not response_text or not str(response_text).strip():
+                    raise Exception("Empty or invalid response from Gemini API")
+                logger.info(f"Response text length: {len(response_text)} characters")
                 logger.debug("Parsing JSON response from Gemini")
-                logger.debug(f"Raw Gemini response: {response.text}")
+                logger.debug(f"Raw Gemini response: {response_text}")
                 try:
                     logger.info(f"JSON parsing for Gemini response (API attempt {attempt+1})")
-                    plan_data = self._parse_json_response(response.text)
+                    plan_data = self._parse_json_response(response_text)
                     logger.info("Successfully parsed plan data from Gemini response")
                     logger.info("Enriching plan with external tools")
                     enrichment_start = time.time()
@@ -468,23 +461,30 @@ Be specific, realistic, and actionable in your planning."""
                     logger.error(f"JSON parsing failed (API attempt {attempt+1}): {e}")
                     last_exception = e
                     # Do not retry JSON parsing, only retry API call
-            except Exception as e:
-                api_response_time = time.time() - api_start_time
-                logger.error(f"Gemini API call failed after {api_response_time:.3f}s: {e}")
-                log_external_api_call(
-                    logger=logger,
-                    service="Gemini",
-                    endpoint="generate_content",
-                    method="POST",
-                    error=str(e),
-                    response_time=api_response_time,
-                    request_data=sanitize_log_data({"prompt_length": len(prompt), "goal_length": len(goal)})
-                )
+            except asyncio.TimeoutError:
+                logger.error(f"Gemini API call timed out after 60 seconds on attempt {attempt+1}")
+                last_exception = Exception("Gemini API call timed out after 60 seconds")
+                if attempt < max_attempts - 1:
+                    backoff = delay_seconds * (2 ** attempt)
+                    logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
+                    time.sleep(backoff)
+                continue
+            except (ConnectionError, OSError) as e:
+                logger.error(f"Connection error on Gemini API attempt {attempt+1}: {e}")
                 last_exception = e
-            if attempt < max_attempts - 1:
-                backoff = delay_seconds * (2 ** attempt)
-                logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
-                time.sleep(backoff)
+                if attempt < max_attempts - 1:
+                    backoff = delay_seconds * (2 ** attempt)
+                    logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
+                    time.sleep(backoff)
+                continue
+            except Exception as e:
+                logger.error(f"Gemini API call failed on attempt {attempt+1}: {e}")
+                last_exception = e
+                if attempt < max_attempts - 1:
+                    backoff = delay_seconds * (2 ** attempt)
+                    logger.info(f"Retrying Gemini API call after {backoff} seconds (exponential backoff)...")
+                    time.sleep(backoff)
+                continue
         logger.error(f"All attempts to parse Gemini response failed. Last error: {last_exception}")
         raise ExternalServiceError(
             message=f"Failed to parse Gemini response after {max_attempts} attempts: {last_exception}",
