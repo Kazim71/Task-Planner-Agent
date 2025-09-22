@@ -1,23 +1,70 @@
+def safe_tavily_search(query: str) -> str:
+    """
+    Safe Tavily web search with error handling and API key check.
+    """
+    import os
+    try:
+        api_key = os.getenv('TAVILY_API_KEY')
+        if not api_key:
+            return "Web search unavailable: TAVILY_API_KEY not set."
+        # Call the actual Tavily search function (imported from tools)
+        from tools import tavily_web_search
+        return tavily_web_search(query)
+    except Exception as e:
+        return f"Web search unavailable: {e}"
+
+async def safe_get_weather(city: str, date_str: str) -> str:
+    """
+    Safe weather forecast with error handling and API key check.
+    """
+    import os
+    try:
+        api_key = os.getenv('OPENWEATHER_API_KEY')
+        if not api_key:
+            return "Weather unavailable: OPENWEATHER_API_KEY not set."
+        # Call the actual weather forecast function (imported from tools)
+        from tools import get_weather_forecast
+        return await get_weather_forecast(city, date_str)
+    except Exception as e:
+        return f"Weather unavailable: {e}"
 import os
 import logging
 
 # Startup API key validation and fallback mode
 FALLBACK_MODE = False
 missing_keys = []
-if not os.getenv('TAVILY_API_KEY'):
-    logging.error('TAVILY_API_KEY environment variable is missing. Web search will use fallback mode.')
+available_services = []
+
+TAVILY_KEY = os.getenv('TAVILY_API_KEY')
+OPENWEATHER_KEY = os.getenv('OPENWEATHER_API_KEY')
+
+if TAVILY_KEY and len(TAVILY_KEY) >= 10:
+    available_services.append('Web Search (Tavily)')
+else:
+    logging.warning('TAVILY_API_KEY is missing or too short. Web search will use fallback mode.')
     missing_keys.append('TAVILY_API_KEY')
-if not os.getenv('OPENWEATHER_API_KEY'):
-    logging.error('OPENWEATHER_API_KEY environment variable is missing. Weather will use fallback mode.')
+
+if OPENWEATHER_KEY and len(OPENWEATHER_KEY) >= 10:
+    available_services.append('Weather (OpenWeather)')
+else:
+    logging.warning('OPENWEATHER_API_KEY is missing or too short. Weather will use fallback mode.')
     missing_keys.append('OPENWEATHER_API_KEY')
+
 if missing_keys:
     FALLBACK_MODE = True
+    logging.info(f"Running in fallback mode. Missing keys: {', '.join(missing_keys)}")
+else:
+    logging.info("All required API keys are present. Full service mode enabled.")
+
 def debug_print_api_keys():
-    import os
-    tavily = os.getenv('TAVILY_API_KEY')
-    openweather = os.getenv('OPENWEATHER_API_KEY')
+    tavily = TAVILY_KEY
+    openweather = OPENWEATHER_KEY
     print(f"TAVILY_API_KEY present: {bool(tavily)}, length: {len(tavily) if tavily else 0}")
     print(f"OPENWEATHER_API_KEY present: {bool(openweather)}, length: {len(openweather) if openweather else 0}")
+    if available_services:
+        print(f"Available services: {', '.join(available_services)}")
+    if missing_keys:
+        print(f"Fallback mode enabled. Missing: {', '.join(missing_keys)}")
 
 debug_print_api_keys()
 import time
@@ -310,7 +357,7 @@ Always return your response in the following JSON format:
 Be specific, realistic, and actionable in your planning."""
 
     @timing_decorator
-    def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15) -> Dict[str, Any]:
+    def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
         """
         Generate a structured plan for the given goal.
         Args:
@@ -524,7 +571,7 @@ Be specific, realistic, and actionable in your planning."""
                 city = day.get("location") or plan_data.get("goal", "").split()[-1]  # crude guess if not present
                 date_str = day.get("date")
                 if city and date_str:
-                    weather = await get_weather_forecast(city, date_str)
+                    weather = await safe_get_weather(city, date_str)
                     day["weather_forecast"] = weather
                 else:
                     day["weather_forecast"] = "No city/date info for weather."
