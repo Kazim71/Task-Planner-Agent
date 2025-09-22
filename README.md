@@ -1,5 +1,4 @@
 
-
 # Task Planner Agent
 
 [![Production Status](https://img.shields.io/badge/Live%20Demo-Railway-green?logo=railway&style=flat-square)](https://task-planner-agent-production.up.railway.app/)
@@ -8,11 +7,13 @@
 
 ---
 
-**Current Status:** ✅ Production deployed on Railway (asia-southeast1)
+## 1. Project Overview
+
+Task Planner Agent is an AI-powered web application that generates structured, actionable plans for your goals or vacations. Powered by Google Gemini AI, it provides day-by-day breakdowns, date-based scheduling, and persistent storage. Deployed on Railway for reliability and speed.
 
 ---
 
-## Technology Stack
+## 2. Technology Stack
 
 - **Backend:** Python 3.12.10
 - **Framework:** Flask (API compatible with FastAPI)
@@ -23,7 +24,7 @@
 
 ---
 
-## Key Features
+## 3. Features
 
 - AI-generated vacation and task plans
 - Date-based planning and scheduling
@@ -32,154 +33,166 @@
 
 ---
 
-## 🚀 Installation & Setup
+## 4. Quick Start
 
-### 1. Clone the Repository
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package manager)
+- Gemini API key (see below)
 
+### Installation
 ```bash
 git clone <repository-url>
 cd task-planner-agent
-```
-
-### 2. Create Virtual Environment
-
-```bash
 python -m venv venv
 venv\Scripts\activate  # On Windows
 # or
 source venv/bin/activate  # On macOS/Linux
-```
-
-### 3. Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Environment Variables
-
-Create a `.env` file in the project root with:
-
+### Environment Variables
+Create a `.env` file in the project root:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 # Optional for local DB:
 DATABASE_URL=sqlite:///./task_planner.db
 ```
 
----
-
-## Usage
-
-### Local Development
-
+### Running Locally
 ```bash
 python main.py
 # or for hot reload (if using FastAPI):
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-
-Visit [http://localhost:8000](http://localhost:8000) in your browser.
-
-### Production (Railway)
-
-Deployed and live at: [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)
+Visit [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## API Documentation
+## 5. API Documentation
 
-### Base URL
-
+**Base URL:**
 ```
 https://task-planner-agent-production.up.railway.app/
 ```
 
 ### Endpoints
 
-#### 1. Web Interface
-```
-GET /
-```
-Returns the main web interface with goal input form.
+- `GET /` — Main web interface
+- `POST /plan` — Create a plan
+    - Request: `{ "goal": "Plan a 2-week vacation to Goa", "start_date": "2025-09-22", "save_to_db": true }`
+    - Response: `{ "success": true, "message": "Plan created successfully", ... }`
+- `GET /plans?limit=10&search=vacation` — Get all plans
+- `GET /plans/{plan_id}` — Get a specific plan
+- `DELETE /plans/{plan_id}` — Delete a plan
+- `GET /health` — Health check
 
-#### 2. Create Plan
-```
-POST /plan
-Content-Type: application/json
-
-{
-    "goal": "Plan a 2-week vacation to Goa",
-    "start_date": "2025-09-22",
-    "save_to_db": true
-}
-```
-**Response:**
+**Error Response Example:**
 ```json
 {
-    "success": true,
-    "message": "Plan created successfully",
-    "plan_id": 1,
-    "plan_data": { ... },
-    "formatted_plan": "PLAN: Plan a 2-week vacation to Goa\n..."
+  "success": false,
+  "error": "Error type",
+  "message": "Detailed error message"
 }
 ```
 
-#### 3. Get All Plans
-```
-GET /plans?limit=10&search=vacation
-```
+---
 
-#### 4. Get Specific Plan
-```
-GET /plans/{plan_id}
-```
+## 6. Architecture Diagram
 
-#### 5. Delete Plan
-```
-DELETE /plans/{plan_id}
-```
-
-#### 6. Health Check
-```
-GET /health
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        A[Web Browser] --> B[Jinja2 Templates]
+        B --> C[HTML/CSS/JavaScript]
+    end
+    subgraph "API Layer"
+        D[FastAPI Server] --> E[Request Validation]
+        E --> F[Route Handlers]
+    end
+    subgraph "Business Logic"
+        F --> G[Task Planning Agent]
+        G --> H[Google Gemini 2.5 Pro]
+        G --> I[Web Search Tool]
+        G --> J[Weather Tool]
+    end
+    subgraph "Data Layer"
+        K[SQLite Database] --> L[SQLAlchemy ORM]
+        L --> M[Plan Models]
+    end
+    subgraph "External Services"
+        N[Tavily API] --> O[Web Search Results]
+        P[OpenWeatherMap API] --> Q[Weather Data]
+    end
+    A --> D
+    F --> G
+    G --> K
+    I --> N
+    J --> P
+    O --> G
+    Q --> G
 ```
 
 ---
 
-## Environment Variables
+## 7. Development & Deployment
 
-| Variable         | Description                        |
-|------------------|------------------------------------|
-| GEMINI_API_KEY   | Google Gemini API key (required)   |
-| DATABASE_URL     | Database URL (optional, default SQLite) |
+### Project Structure
+```
+task_planner_agent/
+├── main.py                  # FastAPI server and API endpoints
+├── agent.py                 # AI planning agent with Gemini integration
+├── models.py                # Database models and ORM operations
+├── tools.py                 # External API tools (web search, weather)
+├── templates/
+│   └── index.html          # Web frontend template
+├── requirements.txt         # Python dependencies
+├── README.md               # Project documentation
+├── .env                    # Environment variables (create this)
+└── task_planner.db         # SQLite database (created automatically)
+```
 
----
+### Local Development
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-## Deployment Status
+### Database Management
+```bash
+# Delete the database file
+rm task_planner.db
+# Restart the application
+python main.py
+```
 
+### Production (Railway)
 - **Production:** [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)
 - **Region:** asia-southeast1 (Railway)
 - **Process:** Gunicorn + Uvicorn workers, managed by Procfile
 
+### Docker Deployment
+```dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
 ---
 
-## License
+## 8. License & Contributing
 
 MIT License. See [LICENSE](LICENSE) for details.
 
----
+Contributions are welcome! Please open an issue or pull request for bugs or feature requests.
 
-## Acknowledgments
-
+**Acknowledgments:**
 - Google Gemini for AI-powered plan generation
 - Railway for cloud deployment
 - Gunicorn & Uvicorn for production serving
-
----
-
-## Support & Contributing
-
-Open to issues and pull requests. Please open an issue for bugs or feature requests.
 
 ## 📋 Prerequisites
 
