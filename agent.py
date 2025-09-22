@@ -357,7 +357,7 @@ Always return your response in the following JSON format:
 Be specific, realistic, and actionable in your planning."""
 
     @timing_decorator
-    async def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
+    async def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None, departure_city: str = None, citizenship: str = None) -> Dict[str, Any]:
         """
         Generate a structured plan for the given goal.
         Args:
@@ -396,11 +396,18 @@ Be specific, realistic, and actionable in your planning."""
         if user_prefs is None:
             user_prefs = collect_user_preferences()
         interests = user_prefs.get('interests', 'sightseeing, local cuisine, culture')
-        citizenship = user_prefs.get('citizenship', 'Unknown')
+        # Collect departure city and citizenship from arguments or user_prefs
+        if not departure_city:
+            departure_city = user_prefs.get('departure_city', 'Unknown')
+        if not citizenship:
+            citizenship = user_prefs.get('citizenship', 'Unknown')
         budget = user_prefs.get('budget', 'Moderate')
+        # Replace placeholders in the system prompt and goal
+        prompt_base = self.system_prompt.replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
+        goal_filled = goal.strip().replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
         prompts = [
-            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks, using the provided itinerary dates\n- Personalize recommendations for the user's interests, citizenship, and budget\n- Replace all [placeholders] in the plan with actual user data\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
-            f"""{self.system_prompt}\n\nGoal: {goal.strip()}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nReturn only the JSON response, no additional text."""
+            f"""{prompt_base}\n\nGoal: {goal_filled}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nPlease create a detailed, actionable plan for this goal. Make sure to:\n- Break it down into daily tasks, using the provided itinerary dates\n- Personalize recommendations for the user's interests, citizenship, and budget\n- Replace all [placeholders] in the plan with actual user data\n- Consider realistic timeframes\n- Identify research topics that would be helpful\n- Note if weather information would be relevant\n- Include dependencies between tasks\n- Suggest success metrics\n\nReturn only the JSON response, no additional text.""",
+            f"""{prompt_base}\n\nGoal: {goal_filled}\nStart Date: {start_date}\nItinerary Dates: {[d.strftime('%Y-%m-%d') for d in itinerary_dates]}\nUser Interests: {interests}\nUser Citizenship: {citizenship}\nUser Budget: {budget}\n\nReturn only the JSON response, no additional text."""
         ]
         import asyncio
         for attempt in range(max_attempts):

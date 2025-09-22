@@ -385,7 +385,44 @@
                             required
                         ></textarea>
                     </div>
-                    
+                    <div class="form-group">
+                        <label for="departure_city">Departure City</label>
+                        <input 
+                            type="text" 
+                            id="departure_city" 
+                            name="departure_city" 
+                            placeholder="e.g. New York, London, Tokyo" 
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="citizenship">Citizenship</label>
+                        <input 
+                            type="text" 
+                            id="citizenship" 
+                            name="citizenship" 
+                            placeholder="e.g. United States, Canada, India" 
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="budget">Budget</label>
+                        <input 
+                            type="text" 
+                            id="budget" 
+                            name="budget" 
+                            placeholder="e.g. Moderate, Luxury, $2000, etc." 
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="preferences">Travel Preferences (comma separated)</label>
+                        <input 
+                            type="text" 
+                            id="preferences" 
+                            name="preferences" 
+                            placeholder="e.g. sightseeing, local cuisine, hiking, museums" 
+                        >
+                    </div>
                     <div class="form-group">
                         <label for="start_date">Start Date (Optional)</label>
                         <input 
@@ -394,7 +431,6 @@
                             name="start_date"
                         >
                     </div>
-                    
                     <div class="form-group">
                         <div class="checkbox-group">
                             <input 
@@ -406,7 +442,6 @@
                             <label for="save_to_db">Save plan to database</label>
                         </div>
                     </div>
-                    
                     <button type="submit" class="btn" id="submitBtn">
                         Generate Plan
                     </button>
@@ -457,21 +492,33 @@
             
             const formData = new FormData(e.target);
             const goal = formData.get('goal');
+            const departureCity = formData.get('departure_city');
+            const citizenship = formData.get('citizenship');
+            const budget = formData.get('budget');
+            const preferences = formData.get('preferences');
             const startDate = formData.get('start_date');
             const saveToDb = formData.get('save_to_db') === 'on';
-            
+
             // Clear previous messages
             clearMessages();
-            
+
             if (!goal.trim()) {
                 showMessage('Please enter a goal', 'error');
                 return;
             }
-            
+            if (!departureCity.trim()) {
+                showMessage('Please enter your departure city', 'error');
+                return;
+            }
+            if (!citizenship.trim()) {
+                showMessage('Please enter your citizenship', 'error');
+                return;
+            }
+
             // Show loading state
             showLoading(true);
             document.getElementById('resultSection').style.display = 'none';
-            
+
             try {
                 console.log('Sending request to /plan endpoint...');
                 const response = await fetch('/plan', {
@@ -482,7 +529,11 @@
                     body: JSON.stringify({
                         goal: goal.trim(),
                         start_date: startDate || null,
-                        save_to_db: saveToDb
+                        save_to_db: saveToDb,
+                        departure_city: departureCity.trim(),
+                        citizenship: citizenship.trim(),
+                        budget: budget.trim(),
+                        preferences: preferences.trim()
                     })
                 });
                 
