@@ -227,7 +227,7 @@ async def create_plan_endpoint(plan_request: PlanRequest):
         
         # Generate the plan
         try:
-            plan_data = agent.generate_plan(
+            plan_data = await agent.generate_plan(
                 goal=validated_data["goal"],
                 start_date=validated_data["start_date"]
             )
