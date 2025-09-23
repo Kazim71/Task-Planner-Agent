@@ -1,3 +1,51 @@
+import traceback
+
+def log_error(msg, exc=None):
+    print(f"[ERROR] {msg}")
+    if exc:
+        print(traceback.format_exc())
+
+try:
+    from fastapi import FastAPI, Request
+    from fastapi.responses import JSONResponse
+    import os
+    app = FastAPI()
+    print("DEBUG: FastAPI app initialized")
+except Exception as e:
+    log_error("App initialization failed", e)
+    raise
+
+# Minimal root endpoint with error handling
+@app.get("/")
+async def home():
+    try:
+        return {"status": "working", "message": "Task Planner Agent"}
+    except Exception as e:
+        log_error("Root endpoint failed", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+# Minimal health endpoint with error handling
+@app.get("/health")
+async def health():
+    try:
+        return {"status": "healthy"}
+    except Exception as e:
+        log_error("Health endpoint failed", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+# Global exception handler for uncaught errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    log_error(f"Unhandled exception for {request.url}", exc)
+    return JSONResponse(status_code=500, content={"error": str(exc), "trace": traceback.format_exc()})
+
+# Fallback mode: Warn if critical env vars are missing
+missing_keys = []
+for key in ["GEMINI_API_KEY", "TAVILY_API_KEY", "OPENWEATHER_API_KEY"]:
+    if not os.getenv(key):
+        missing_keys.append(key)
+if missing_keys:
+    print(f"[WARNING] Missing environment variables: {', '.join(missing_keys)}. Running in fallback mode.")
 from fastapi import FastAPI
 app = FastAPI()
 import os
