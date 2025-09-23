@@ -323,7 +323,7 @@ from models import create_tables, get_plan_by_id, delete_plan, search_plans_by_g
 from exceptions import (
     TaskPlannerException, ValidationError, AuthenticationError, 
     ResourceNotFoundError, ExternalServiceError, DatabaseError,
-    ConfigurationError, handle_exception, create_error_response
+    ConfigurationError, handle_exception, create_error_response, ErrorCode
 )
 from validators import InputValidator, validate_api_key
 
