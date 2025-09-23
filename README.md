@@ -237,6 +237,27 @@ python main.py
 ```
 The application will be available at `http://localhost:8000`
 
+## 📖 Usage
+
+### Web Interface
+
+1. **Open the Application**: Navigate to `http://localhost:8000`
+2. **Enter Your Goal**: Describe what you want to accomplish in natural language
+3. **Set Start Date**: Optionally specify when to begin (defaults to today)
+4. **Generate Plan**: Click "Generate Plan" to create your personalized plan
+5. **View Results**: Review the generated plan with daily breakdowns
+6. **Manage Plans**: Browse, search, and delete saved plans
+
+### Example Goals
+
+- "Learn Python programming and build a web application"
+- "Plan a 2-week vacation to Japan"
+- "Start a fitness routine and lose 20 pounds"
+- "Learn machine learning and build a recommendation system"
+- "Organize a wedding for 100 guests"
+- "Prepare for a job interview at a tech company"
+
+
 ## AI Usage Disclosure
 This project was developed with help from GitHub Copilot and other AI tools for:
 Initial scaffolding & boilerplate
