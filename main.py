@@ -1,3 +1,118 @@
+# Minimal dependency test endpoint for plan generation
+@app.get("/test-plan")
+async def test_plan_minimal():
+    import traceback
+    from agent import TaskPlanningAgent
+    import logging
+    logger = logging.getLogger("plan_test_minimal")
+    result = {"success": False, "steps": []}
+    try:
+        logger.info("Instantiating TaskPlanningAgent (minimal test)...")
+        result["steps"].append("Instantiating TaskPlanningAgent (minimal test)...")
+        agent = TaskPlanningAgent()
+        # Patch agent to mock enrichment (bypass web search and weather)
+        async def mock_enrich(plan_data, goal, logger=None):
+            if logger:
+                logger.info("[MOCK] Skipping web search and weather enrichment.")
+            result["steps"].append("[MOCK] Skipping web search and weather enrichment.")
+            return plan_data
+        agent._enrich_plan_with_tools = mock_enrich
+        logger.info("Calling generate_plan with goal: 'Plan a morning routine' (minimal dependencies)")
+        result["steps"].append("Calling generate_plan with goal: 'Plan a morning routine' (minimal dependencies)")
+        plan = await agent.generate_plan("Plan a morning routine")
+        logger.info("Plan generated successfully (minimal test).")
+        result["steps"].append("Plan generated successfully (minimal test).")
+        result["plan"] = plan
+        result["success"] = True
+    except Exception as e:
+        logger.error(f"Plan generation failed (minimal test): {e}\n{traceback.format_exc()}")
+        result["steps"].append(f"Plan generation failed (minimal test): {e}")
+        result["error"] = str(e)
+        result["trace"] = traceback.format_exc()
+    return result
+# Simple backend test endpoint for plan generation
+@app.get("/test-plan-generation")
+async def test_plan_generation():
+    import traceback
+    from agent import TaskPlanningAgent
+    import logging
+    logger = logging.getLogger("plan_test")
+    result = {"success": False, "steps": []}
+    try:
+        logger.info("Instantiating TaskPlanningAgent...")
+        result["steps"].append("Instantiating TaskPlanningAgent...")
+        agent = TaskPlanningAgent()
+        logger.info("Calling generate_plan with goal: 'Plan a morning routine'")
+        result["steps"].append("Calling generate_plan with goal: 'Plan a morning routine'")
+        plan = await agent.generate_plan("Plan a morning routine")
+        logger.info("Plan generated successfully.")
+        result["steps"].append("Plan generated successfully.")
+        result["plan"] = plan
+        result["success"] = True
+    except Exception as e:
+        logger.error(f"Plan generation failed: {e}\n{traceback.format_exc()}")
+        result["steps"].append(f"Plan generation failed: {e}")
+        result["error"] = str(e)
+        result["trace"] = traceback.format_exc()
+    return result
+# Debug endpoint for service connectivity
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+import os
+import sqlite3
+import traceback
+from agent import TaskPlanningAgent
+import tools
+
+@app.get("/debug")
+async def debug_connectivity():
+    statuses = {}
+    # Gemini API
+    try:
+        agent = TaskPlanningAgent()
+        # Minimal Gemini API call: check model exists and can generate a trivial response
+        result = agent.model.generate_content("Say hello.")
+        text = getattr(result, 'text', None) or (getattr(result, 'parts', [None])[0] if hasattr(result, 'parts') else None)
+        if text:
+            statuses['gemini'] = {"success": True}
+        else:
+            statuses['gemini'] = {"success": False, "error": "No response text from Gemini."}
+    except Exception as e:
+        statuses['gemini'] = {"success": False, "error": str(e), "trace": traceback.format_exc()}
+
+    # Tavily API
+    try:
+        tavily_result = tools.tavily_web_search("test connectivity", max_results=1)
+        if tavily_result and isinstance(tavily_result, (list, str)) and len(tavily_result) > 0:
+            statuses['tavily'] = {"success": True}
+        else:
+            statuses['tavily'] = {"success": False, "error": "No results from Tavily."}
+    except Exception as e:
+        statuses['tavily'] = {"success": False, "error": str(e), "trace": traceback.format_exc()}
+
+    # OpenWeatherMap API
+    try:
+        weather_result = tools.get_weather("London")
+        if weather_result and (isinstance(weather_result, dict) or isinstance(weather_result, str)):
+            statuses['openweathermap'] = {"success": True}
+        else:
+            statuses['openweathermap'] = {"success": False, "error": "No weather data returned."}
+    except Exception as e:
+        statuses['openweathermap'] = {"success": False, "error": str(e), "trace": traceback.format_exc()}
+
+    # Database connectivity
+    try:
+        db_path = os.getenv('DB_PATH', 'task_planner.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1;")
+        _ = cursor.fetchone()
+        conn.close()
+        statuses['database'] = {"success": True}
+    except Exception as e:
+        statuses['database'] = {"success": False, "error": str(e), "trace": traceback.format_exc()}
+
+    return JSONResponse(content={"services": statuses})
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -102,20 +217,6 @@ class PlanRequest(BaseModel):
     goal: str = Field(..., min_length=1, max_length=500, description="The goal to plan for")
     start_date: Optional[str] = Field(None, description="Start date in YYYY-MM-DD format")
     save_to_db: bool = Field(True, description="Whether to save the plan to database")
-    # Adaptive fields for travel
-    departure_city: Optional[str] = Field(None, description="Departure city (for travel plans)")
-    budget: Optional[str] = Field(None, description="Budget (for travel plans)")
-    citizenship: Optional[str] = Field(None, description="Citizenship (for travel plans)")
-    # Adaptive fields for learning
-    skill_level: Optional[str] = Field(None, description="Current skill level (for learning plans)")
-    learning_style: Optional[str] = Field(None, description="Learning style (for learning plans)")
-    resources: Optional[str] = Field(None, description="Available resources (for learning plans)")
-    # Adaptive fields for project
-    team_size: Optional[str] = Field(None, description="Team size (for project plans)")
-    tools: Optional[str] = Field(None, description="Tools/technology (for project plans)")
-    constraints: Optional[str] = Field(None, description="Constraints (for project plans)")
-    # General
-    context: Optional[str] = Field(None, description="Additional context (for general plans)")
 
 class PlanResponse(BaseModel):
     success: bool
@@ -196,17 +297,7 @@ async def create_plan_endpoint(plan_request: PlanRequest):
             validated_data = InputValidator.validate_plan_request({
                 "goal": plan_request.goal,
                 "start_date": plan_request.start_date,
-                "save_to_db": plan_request.save_to_db,
-                "departure_city": plan_request.departure_city,
-                "budget": plan_request.budget,
-                "citizenship": plan_request.citizenship,
-                "skill_level": plan_request.skill_level,
-                "learning_style": plan_request.learning_style,
-                "resources": plan_request.resources,
-                "team_size": plan_request.team_size,
-                "tools": plan_request.tools,
-                "constraints": plan_request.constraints,
-                "context": plan_request.context
+                "save_to_db": plan_request.save_to_db
             })
         except ValidationError as e:
             logger.warning(f"Validation error: {e.message}")
@@ -251,20 +342,9 @@ async def create_plan_endpoint(plan_request: PlanRequest):
         
         # Generate the plan
         try:
-            # Pass all adaptive fields to the agent
             plan_data = await agent.generate_plan(
                 goal=validated_data["goal"],
-                start_date=validated_data["start_date"],
-                departure_city=validated_data.get("departure_city"),
-                budget=validated_data.get("budget"),
-                citizenship=validated_data.get("citizenship"),
-                skill_level=validated_data.get("skill_level"),
-                learning_style=validated_data.get("learning_style"),
-                resources=validated_data.get("resources"),
-                team_size=validated_data.get("team_size"),
-                tools=validated_data.get("tools"),
-                constraints=validated_data.get("constraints"),
-                context=validated_data.get("context")
+                start_date=validated_data["start_date"]
             )
             logger.info("Plan generated successfully")
         except Exception as e:
