@@ -1,153 +1,204 @@
-Task Planner Agent 🚀
+# Task Planner Agent 🚀
 
-AI-powered agent that transforms high-level goals into structured, actionable plans — from learning a skill to planning a trip.
+**A smart, AI-powered agent that creates detailed, actionable plans for any goal, from learning a new skill to planning a vacation.**
 
+---
 
+[![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![Framework](https://img.shields.io/badge/Framework-FastAPI-green.svg)](https://fastapi.tiangolo.com/)
+[![Deployment](https://img.shields.io/badge/Deployed%20on-Railway-lightgrey.svg)](https://railway.app/)
 
+**Live Demo:** A live demo can be provided upon request. *(Note: Public API keys have usage limits.)*
 
+## Overview
 
+This project is a full-stack web application built with Python and FastAPI that leverages the power of Google's Gemini AI to function as an intelligent task planner. Users can input a high-level goal, and the agent will use a sophisticated "two-pass" system to generate a structured, day-by-day plan.
 
-Live Demo: Task Planner Agent on Railway
- (API usage limits apply)
+The agent is designed to be versatile, capable of creating everything from technical learning roadmaps to detailed travel itineraries. It intelligently decides when to use external tools like web search (Tavily) and weather forecasting (OpenWeatherMap) to enrich its plans with real-time, relevant data.
 
-📌 Overview
+## Key Features
 
-This is a full-stack web application built with Python + FastAPI, powered by Google Gemini AI.
-The agent takes a natural language goal, breaks it into steps, enriches with real-time web search (Tavily) and weather forecasts (OpenWeatherMap), then outputs a structured daily plan. Plans are stored in a database for later access.
-
-Designed for flexibility: it can generate learning roadmaps, travel itineraries, fitness routines, or any structured plan you throw at it.
-
-✨ Key Features
-
-Two-pass planning: picks tools first, then composes the plan.
-
-Dynamic personas: act as travel agent, study coach, project manager, etc.
-
-External integrations:
+* **Intelligent AI Agent:** Uses a "two-pass" thinking process to first select the right tools and then generate an informed plan.
+* **Dynamic AI Personas:** The agent's instructions (system prompt) can be easily modified to make it an expert in any domain (e.g., a travel agent, a fitness coach, a career advisor).
+* **Tool Integration:** Seamlessly integrates with external APIs for web search and weather to create fact-based, relevant plans.
+Tool Integration:
 
 🌐 Tavily Web Search
 
 🌦️ OpenWeatherMap
 
-Persistence: SQLite for dev, PostgreSQL in production.
+* **Full-Stack Application:** Built with a robust FastAPI backend and a clean, responsive HTML/JavaScript frontend.
+* **Database Persistence:** Saves all generated plans to a database (SQLite locally, PostgreSQL in production) for later viewing.
+* **CI/CD Pipeline:** Deployed on Railway with a continuous deployment pipeline triggered by pushes to the main GitHub branch.
 
-Simple Web UI: input new goals, view plan, browse history.
-
-Continuous deployment: auto-deploys to Railway on push.
-
-📝 Examples
-Example 1: Data Science Roadmap
+---
+📝 Examples in Action
+Example 1: Learning Roadmap
 
 Goal: “Make a Roadmap to Learn Data Science in 6 months”
 
-<details> <summary>Generated Plan (JSON excerpt)</summary>
+<details> <summary>Generated Plan</summary>
+
+<details>
+<summary>Click to see the Generated Plan</summary>
+
 {
   "goal": "Make a Roadmap to Learn Data Science in 6 months",
-  "overview": "6-month roadmap covering Python, math, ML, SQL, projects, and portfolio.",
+  "overview": "A comprehensive 6-month roadmap progressing from fundamentals to advanced projects.",
+  "estimated_duration": "6 months",
+  "daily_breakdown": [
+    {
+      "day": 1,
+      "focus": "Month 1: Python & Math",
+      "tasks": [
+        {
+          "task": "Complete a Python fundamentals course",
+          "estimated_time": "3 weeks",
+          "priority": "high"
+        },
+        {
+          "task": "Review Linear Algebra and Statistics basics",
+          "estimated_time": "1 week",
+          "priority": "high"
+        }
+      ]
+    },
+    {
+      "day": 61,
+      "focus": "Month 3: Machine Learning",
+      "tasks": [
+        {
+          "task": "Learn supervised vs unsupervised learning with Scikit-learn",
+          "estimated_time": "4 weeks",
+          "priority": "high"
+        }
+      ]
+    }
+  ],
   "success_metrics": [
-    "Two end-to-end projects",
-    "Portfolio website",
+    "2 end-to-end projects",
+    "Portfolio site with projects",
     "Core ML understanding"
   ],
   "potential_challenges": [
-    "Overwhelming field",
-    "Finding datasets",
-    "Maintaining motivation"
+    "Finding good datasets",
+    "Motivation dips",
+    "Overwhelming scope"
   ]
 }
-
 </details>
-Example 2: London Photography Trip
+
+
+Example 2: Travel Itinerary
 
 Goal: “Plan a 4-day photography trip to London next week”
 
-<details> <summary>Generated Plan (JSON excerpt)</summary>
+<details> <summary>Generated Plan</summary>
+
 {
   "goal": "Plan a 4-day photography trip to London",
-  "overview": "A photography-focused itinerary covering landmarks, hidden gems, and street life.",
+  "overview": "Photography-focused itinerary covering landmarks, hidden gems, and street life.",
+  "estimated_duration": "4 days",
+  "daily_breakdown": [
+    {
+      "day": 1,
+      "focus": "Iconic Landmarks",
+      "tasks": [
+        {
+          "task": "Shoot St. Paul’s Cathedral from Millennium Bridge",
+          "estimated_time": "3 hours",
+          "priority": "high"
+        }
+      ]
+    }
+  ],
   "success_metrics": [
     "20 portfolio-quality images",
-    "5 iconic landmarks",
-    "Smooth navigation"
+    "5 iconic landmarks"
   ],
   "potential_challenges": [
-    "Unpredictable weather",
-    "Tourist crowds",
-    "Underground travel"
+    "London weather",
+    "Tourist crowds"
   ]
 }
-
 </details>
-🏗 Architecture
-flowchart TD
-    User([Browser])
-    UI[Frontend - index.html]
-    API[FastAPI Backend]
-    DB[(Database: SQLite/Postgres)]
-    Agent[Task Planner Agent]
-    Gemini[Google Gemini AI]
-    Tavily[Tavily Search API]
-    Weather[OpenWeatherMap API]
 
-    User --> UI --> API
-    API --> Agent
-    Agent --> Gemini
-    Agent --> Tavily
-    Agent --> Weather
-    Agent --> DB
-    DB --> API --> UI --> User
+🏗 Architecture
+Code snippet
+
+flowchart TD
+    subgraph "User's Browser"
+        A[Frontend - index.html]
+    end
+
+    subgraph "Railway.app Cloud Platform"
+        B[FastAPI Backend - main.py]
+        C[Database - PostgreSQL/SQLite]
+    end
+    
+    subgraph "AI & Tools"
+        D[AI Agent - agent.py]
+        E[Google Gemini API]
+        F[External Tools - tools.py]
+        G[Tavily Web Search API]
+        H[OpenWeatherMap API]
+    end
+
+    A --> B
+    B --> D
+    B --> C
+    D --> E
+    D --> F
+    F --> G
+    F --> H
+    D --> B
+    B --> A
+
 
 ⚙️ Tech Stack
 
-Backend: FastAPI, Uvicorn, Gunicorn
+Backend: Python, FastAPI, Uvicorn, Gunicorn
 
 AI: Google Gemini
 
-Database: SQLAlchemy ORM, SQLite (dev), PostgreSQL (prod)
+Database: SQLAlchemy ORM, SQLite (local), PostgreSQL (prod)
 
-Frontend: HTML, CSS, vanilla JavaScript
+Frontend: HTML, CSS, Vanilla JavaScript
 
-Deployment: Railway (CI/CD via GitHub)
+Deployment: Railway (auto-deploy from GitHub)
 
 External APIs: Tavily (search), OpenWeatherMap (weather)
 
 🔧 Local Setup
-
 Prerequisites: Python 3.10+, Git
 
-# Clone repo
+# 1. Clone
 git clone https://github.com/YourUsername/Task-Planner-Agent.git
 cd Task-Planner-Agent
 
-# Create venv
+# 2. Create & activate virtual env
 python -m venv venv
 source venv/bin/activate   # macOS/Linux
 .\venv\Scripts\Activate.ps1 # Windows
 
-# Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# Create .env
-echo GEMINI_API_KEY="your-key" >> .env
-echo TAVILY_API_KEY="your-key" >> .env
-echo OPENWEATHER_API_KEY="your-key" >> .env
+# 4. Environment variables (.env)
+GEMINI_API_KEY="your_key"
+TAVILY_API_KEY="your_key"
+OPENWEATHER_API_KEY="your_key"
 
-# Run locally
+# 5. Run locally
 uvicorn main:app --reload
 
-
-App runs at: http://localhost:8000
+Runs at: http://localhost:8000
 
 🤖 AI Usage Disclosure
 
-This project was developed with assistance from GitHub Copilot and other AI coding tools for:
-
-Boilerplate generation
-
-API integration (Gemini, Tavily, Weather)
-
+This project was developed with help from GitHub Copilot and other AI tools for:
+Initial scaffolding & boilerplate
+API integrations (Gemini, Tavily, Weather)
 Error handling templates
-
 Documentation drafts
-
-All generated code was reviewed, tested, and customized to meet project requirements.
+All code was reviewed, tested, and customized for project needs.
