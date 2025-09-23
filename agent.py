@@ -63,14 +63,15 @@ async def get_weather_forecast(city: str, date_str: str, api_key: str = None) ->
     """
     Async get weather forecast for a city and date using OpenWeather API.
     """
-    import os
-    import datetime
-    api_key = api_key or os.getenv('OPENWEATHER_API_KEY')
-    if not api_key:
-        return "Weather unavailable (API key not set)."
-    cache_key = f"{city.lower()}_{date_str}"
-    if cache_key in _weather_cache:
-        return _weather_cache[cache_key]
+
+    # Import safe_get_weather with fallback if tools.py is missing
+    import sys
+    try:
+        from tools import safe_get_weather
+    except ImportError:
+        async def safe_get_weather(city, date=None):
+            return {"city": city, "date": date, "weather": "Demo weather (tools.py missing)"}
+    # Caching removed for demo/fallback mode; always fetch or fallback
     def fetch():
         url = f"https://api.openweathermap.org/data/2.5/forecast"
         params = {"q": city, "appid": api_key, "units": "metric"}
@@ -96,7 +97,6 @@ async def get_weather_forecast(city: str, date_str: str, api_key: str = None) ->
             result = f"Weather: {main} ({desc}), {temp}°C"
         else:
             result = "No forecast available for this date."
-        _weather_cache[cache_key] = result
         return result
     except asyncio.TimeoutError:
         return "Weather service timeout. Please try again later."
@@ -104,8 +104,6 @@ async def get_weather_forecast(city: str, date_str: str, api_key: str = None) ->
         return f"Weather service error: {e}"
     except Exception as e:
         return "Weather service unavailable. Using fallback: Weather data not available."
-        _weather_cache[cache_key] = result
-        return result
 def collect_user_preferences(interests: str = None, citizenship: str = None, budget: str = None) -> dict:
     """
     Collect user preferences for travel planning.
@@ -189,6 +187,13 @@ import os
 import json
 import google.generativeai as genai
 from typing import Dict, List, Any, Optional
+import sys
+
+try:
+    from tools import safe_get_weather
+except ImportError:
+    async def safe_get_weather(city, date=None):
+        return {"city": city, "date": date, "weather": "Demo weather (tools.py missing)"}
 from datetime import datetime, timedelta, date
 
 def get_itinerary_dates(start_date: date, num_days: int) -> list[date]:
@@ -227,10 +232,11 @@ class TaskPlanningAgent:
         self.system_prompt = """You are an expert task planning assistant. Your role is to break down complex goals into actionable, day-by-day plans.
 
     def get_gemini_model(self):
+        if not self.api_key or len(self.api_key) < 10:
+            # Fallback: Demo mode, no Gemini API
+            return None
         if self._model is None:
             import google.generativeai as genai
-            if not self.api_key or len(self.api_key) < 10:
-                raise ValueError("GEMINI_API_KEY is missing or invalid. Set GEMINI_API_KEY in your environment.")
             valid_models = ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-pro']
             if self.model_name not in valid_models:
                 raise ValueError(f"Gemini model name '{self.model_name}' is not recognized. Valid options: {valid_models}")
@@ -274,7 +280,6 @@ Always return your response in the following JSON format:
 
 Be specific, realistic, and actionable in your planning."""
 
-    @timing_decorator
     async def generate_plan(self, goal: str, start_date: Optional[str] = None, num_days: int = 15, user_prefs: dict = None, departure_city: str = None, citizenship: str = None) -> Dict[str, Any]:
         """
         Generate a structured plan for the given goal.
@@ -338,6 +343,28 @@ Be specific, realistic, and actionable in your planning."""
         ]
         import asyncio
         import traceback
+        if not self.api_key or len(self.api_key) < 10:
+            logger.warning("GEMINI_API_KEY missing: running in fallback demo mode. Returning static plan.")
+            # Fallback: Return a static demo plan
+            return {
+                "goal": goal,
+                "overview": "Demo plan (Gemini API key missing)",
+                "estimated_duration": f"{num_days} days",
+                "daily_breakdown": [
+                    {
+                        "day": 1,
+                        "date": start_date,
+                        "focus": "Demo Day 1",
+                        "tasks": [
+                            {"task": "Sample task 1", "estimated_time": "1 hour", "priority": "high", "dependencies": []}
+                        ],
+                        "research_topics": ["Demo topic"],
+                        "weather_relevant": False
+                    }
+                ],
+                "success_metrics": ["Demo metric"],
+                "potential_challenges": ["Demo challenge"]
+            }
         for attempt in range(max_attempts):
             prompt = prompts[0] if attempt == 0 else prompts[1]
             logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [DEBUG] Prompt length: {len(prompt)} characters (attempt {attempt+1})")
@@ -567,7 +594,6 @@ Be specific, realistic, and actionable in your planning."""
         
         return fixed
 
-    @timing_decorator
     async def _enrich_plan_with_tools(self, plan_data: Dict[str, Any], original_goal: str) -> Dict[str, Any]:
         """
         Enrich the plan with placeholder messages for missing APIs.
@@ -819,7 +845,6 @@ Be specific, realistic, and actionable in your planning."""
             logger.error(f"Error formatting plan output: {e}")
             return f"Error formatting plan: {e}"
 
-    @timing_decorator
     async def create_and_save_plan(self, goal: str, start_date: Optional[str] = None, save_to_db: bool = True, num_days: int = 15, user_prefs: dict = None) -> Dict[str, Any]:
         """
         Create a plan and optionally save it to the database.

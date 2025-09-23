@@ -1,3 +1,14 @@
+# Async safe_get_weather for agent fallback/demo mode
+import asyncio
+
+async def safe_get_weather(city: str, date: str = None):
+    try:
+        # Ignore date for demo; real implementation could use it
+        result = get_weather(city)
+        return {"city": city, "date": date, "weather": result}
+    except Exception as e:
+        # Fallback: Demo mode if API key missing or error
+        return {"city": city, "date": date, "weather": "Demo weather (fallback)", "temp": 20, "desc": "Clear", "error": str(e)}
 import os
 import requests
 from typing import Optional
