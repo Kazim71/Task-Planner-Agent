@@ -220,20 +220,23 @@ class TaskPlanningAgent:
     """
     
     def __init__(self):
-        """Initialize the agent with Gemini API configuration and validate settings."""
+        """Delay heavy Gemini initialization until first use (lazy loading)."""
         self.api_key = os.getenv('GEMINI_API_KEY')
-        if not self.api_key or len(self.api_key) < 10:
-            raise ValueError("GEMINI_API_KEY is missing or invalid. Set GEMINI_API_KEY in your environment.")
-        # Validate Gemini model name/version
         self.model_name = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash-exp')
-        valid_models = ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-pro']
-        if self.model_name not in valid_models:
-            raise ValueError(f"Gemini model name '{self.model_name}' is not recognized. Valid options: {valid_models}")
-        # Configure Gemini
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel(self.model_name)
-        # System prompt for the agent
+        self._model = None
         self.system_prompt = """You are an expert task planning assistant. Your role is to break down complex goals into actionable, day-by-day plans.
+
+    def get_gemini_model(self):
+        if self._model is None:
+            import google.generativeai as genai
+            if not self.api_key or len(self.api_key) < 10:
+                raise ValueError("GEMINI_API_KEY is missing or invalid. Set GEMINI_API_KEY in your environment.")
+            valid_models = ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-pro']
+            if self.model_name not in valid_models:
+                raise ValueError(f"Gemini model name '{self.model_name}' is not recognized. Valid options: {valid_models}")
+            genai.configure(api_key=self.api_key)
+            self._model = genai.GenerativeModel(self.model_name)
+        return self._model
 
 When given a goal, you should:
 1. Analyze the goal and identify key components
@@ -342,7 +345,8 @@ Be specific, realistic, and actionable in your planning."""
             api_start_time = time.time()
             try:
                 try:
-                    response = self.model.generate_content(prompt)
+                    model = self.get_gemini_model()
+                    response = model.generate_content(prompt)
                     logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [DEBUG] Gemini response received (attempt {attempt+1})")
                 except Exception as api_exc:
                     logger.error(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [ERROR] Gemini failed (attempt {attempt+1}): {api_exc}\n{traceback.format_exc()}")

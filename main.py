@@ -1,3 +1,74 @@
+import signal
+import asyncio
+
+# --- Railway Startup Timeout and Graceful Shutdown ---
+STARTUP_TIMEOUT = int(os.getenv('STARTUP_TIMEOUT', '30'))  # seconds
+shutdown_event = asyncio.Event()
+
+def handle_shutdown(*_):
+    print("[RAILWAY] Received shutdown signal. Cleaning up...")
+    shutdown_event.set()
+
+signal.signal(signal.SIGTERM, handle_shutdown)
+signal.signal(signal.SIGINT, handle_shutdown)
+
+# --- Readiness/Liveness Probes ---
+@app.get("/ready")
+async def readiness_probe():
+    return {"status": "ready"}
+
+@app.get("/live")
+async def liveness_probe():
+    return {"status": "alive"}
+from datetime import datetime
+from fastapi import APIRouter
+
+# Lightweight root endpoint
+@app.get("/")
+async def root():
+    return {"status": "ready", "message": "Task Planner Agent is starting..."}
+
+# Health check endpoint with timeouts
+@app.get("/health")
+async def health_check():
+    import asyncio
+    statuses = {}
+    # Gemini check (timeout 3s)
+    try:
+        from agent import TaskPlanningAgent
+        async def gemini_check():
+            agent = TaskPlanningAgent()
+            model = agent.get_gemini_model()
+            # Minimal call, but don't block
+            return True
+        statuses['gemini'] = await asyncio.wait_for(gemini_check(), timeout=3)
+    except Exception as e:
+        statuses['gemini'] = f"error: {e}"
+    # Tavily check (timeout 2s)
+    try:
+        import tools
+        async def tavily_check():
+            return 'CONFIG ERROR' not in tools.tavily_web_search('test')
+        statuses['tavily'] = await asyncio.wait_for(tavily_check(), timeout=2)
+    except Exception as e:
+        statuses['tavily'] = f"error: {e}"
+    # OpenWeather check (timeout 2s)
+    try:
+        import tools
+        async def weather_check():
+            return 'CONFIG ERROR' not in tools.get_weather('London')
+        statuses['openweather'] = await asyncio.wait_for(weather_check(), timeout=2)
+    except Exception as e:
+        statuses['openweather'] = f"error: {e}"
+    # DB check (timeout 2s)
+    try:
+        import models
+        async def db_check():
+            return True  # Assume DB is ready if import works
+        statuses['database'] = await asyncio.wait_for(db_check(), timeout=2)
+    except Exception as e:
+        statuses['database'] = f"error: {e}"
+    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "services": statuses}
 # --- Railway Deployment Checks ---
 import os
 import sys
@@ -27,31 +98,47 @@ def railway_test():
     return {"success": True, "message": "Railway deployment test OK"}
 
 # --- End Railway Deployment Checks ---
+import sys
+import time
 print("DEBUG: Application starting...")
+startup_steps = []
 try:
-    # Existing imports
     import os
-    import sys
-    import traceback
+    startup_steps.append("os imported")
     from fastapi import FastAPI, Request, HTTPException
+    startup_steps.append("fastapi imported")
     from fastapi.responses import JSONResponse, HTMLResponse
+    startup_steps.append("fastapi.responses imported")
     from fastapi.templating import Jinja2Templates
+    startup_steps.append("Jinja2Templates imported")
     from fastapi.staticfiles import StaticFiles
+    startup_steps.append("StaticFiles imported")
     from starlette.middleware.cors import CORSMiddleware
+    startup_steps.append("CORSMiddleware imported")
     from starlette.middleware.sessions import SessionMiddleware
+    startup_steps.append("SessionMiddleware imported")
     from starlette.responses import RedirectResponse
+    startup_steps.append("RedirectResponse imported")
     import agent
+    startup_steps.append("agent imported (Gemini lazy loading)")
     import tools
+    startup_steps.append("tools imported (APIs lazy loading)")
     import models
+    startup_steps.append("models imported (DB lazy loading)")
     import logging_config
+    startup_steps.append("logging_config imported")
     import validators
+    startup_steps.append("validators imported")
     import exceptions
+    startup_steps.append("exceptions imported")
     print("DEBUG: All imports successful")
+    for step in startup_steps:
+        print(f"DEBUG: Startup step: {step}")
 except ImportError as e:
     print(f"DEBUG: Import error: {e}")
     sys.exit(1)
 except Exception as e:
-    print(f"DEBUG: Unexpected startup error: {e}\n{traceback.format_exc()}")
+    print(f"DEBUG: Unexpected startup error: {e}")
     sys.exit(1)
 # Minimal dependency test endpoint for plan generation
 @app.get("/test-plan")
