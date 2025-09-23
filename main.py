@@ -1,23 +1,23 @@
+import os
 import traceback
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+
+# Modern FastAPI app instance at the top
+app = FastAPI(
+    title="Task Planner Agent",
+    description="AI-powered task planning with Google Gemini",
+    version="1.0.0"
+)
 
 # Minimal always-up endpoints for Railway health checks
 @app.get("/", include_in_schema=False)
 async def root_ping():
-    """Minimal always-up root endpoint for Railway health checks."""
     return {"status": "ok", "message": "Task Planner Agent is running."}
 
 @app.get("/healthz", include_in_schema=False)
 async def healthz_ping():
-    """Minimal always-up health endpoint for Railway health checks."""
-    return {"status": "healthy"}
-@app.get("/", include_in_schema=False)
-async def root_ping():
-    """Minimal always-up root endpoint for Railway health checks."""
-    return {"status": "ok", "message": "Task Planner Agent is running."}
-
-@app.get("/healthz", include_in_schema=False)
-async def healthz_ping():
-    """Minimal always-up health endpoint for Railway health checks."""
     return {"status": "healthy"}
 import os
 import traceback
