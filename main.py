@@ -1,6 +1,10 @@
+import os
+import traceback
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-import os
+from contextlib import asynccontextmanager
+
+# Modern FastAPI app instance at the top
 app = FastAPI(
     title="Task Planner Agent",
     description="AI-powered task planning with Google Gemini",
@@ -366,16 +370,24 @@ class ErrorResponse(BaseModel):
     error: str
     details: Optional[str] = None
 
-# Initialize database tables on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database tables on startup."""
+
+# Modern FastAPI lifespan event for startup/shutdown
+from logging_config import get_logger
+from models import create_tables
+
+@asynccontextmanager
+async def lifespan(app):
+    logger = get_logger(__name__)
     try:
         create_tables()
         logger.info("Database tables initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         raise
+    yield
+    # (Optional) Add shutdown logic here if needed
+
+app.router.lifespan_context = lifespan
 
 # Root endpoint - serves the HTML frontend
 @app.get("/", response_class=HTMLResponse)
