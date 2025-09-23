@@ -8,40 +8,37 @@
 [![Framework](https://img.shields.io/badge/Framework-FastAPI-green.svg)](https://fastapi.tiangolo.com/)
 [![Deployment](https://img.shields.io/badge/Deployed%20on-Railway-lightgrey.svg)](https://railway.app/)
 
-**Live Demo:** A live demo can be provided upon request. *(Note: Public API keys have usage limits.)*
+**Live Demo:** [https://task-planner-agent-production.up.railway.app/](https://task-planner-agent-production.up.railway.app/)
+
+---
 
 ## Overview
 
-This project is a full-stack web application built with Python and FastAPI that leverages the power of Google's Gemini AI to function as an intelligent task planner. Users can input a high-level goal, and the agent will use a sophisticated "two-pass" system to generate a structured, day-by-day plan.
+Task Planner Agent is a full-stack web application built with Python and FastAPI that leverages Google's Gemini AI to function as an intelligent task planner. Users can input a high-level goal, and the agent will generate a structured, day-by-day plan, enriched with real-time web search and weather data.
 
-The agent is designed to be versatile, capable of creating everything from technical learning roadmaps to detailed travel itineraries. It intelligently decides when to use external tools like web search (Tavily) and weather forecasting (OpenWeatherMap) to enrich its plans with real-time, relevant data.
+The agent is versatile—capable of creating everything from technical learning roadmaps to detailed travel itineraries. It intelligently decides when to use external tools like Tavily (web search) and OpenWeatherMap (weather) to enrich its plans.
+
+---
 
 ## Key Features
 
-* **Intelligent AI Agent:** Uses a "two-pass" thinking process to first select the right tools and then generate an informed plan.
-* **Dynamic AI Personas:** The agent's instructions (system prompt) can be easily modified to make it an expert in any domain (e.g., a travel agent, a fitness coach, a career advisor).
-* **Tool Integration:** Seamlessly integrates with external APIs for web search and weather to create fact-based, relevant plans.
-Tool Integration:
-
-🌐 Tavily Web Search
-
-🌦️ OpenWeatherMap
-
-* **Full-Stack Application:** Built with a robust FastAPI backend and a clean, responsive HTML/JavaScript frontend.
-* **Database Persistence:** Saves all generated plans to a database (SQLite locally, PostgreSQL in production) for later viewing.
-* **CI/CD Pipeline:** Deployed on Railway with a continuous deployment pipeline triggered by pushes to the main GitHub branch.
+- **Intelligent AI Agent:** Uses a "two-pass" thinking process to select the right tools and generate informed plans.
+- **Dynamic AI Personas:** Easily modify the agent's instructions to make it an expert in any domain (travel, fitness, career, etc.).
+- **Tool Integration:** Seamlessly integrates with Tavily (web search) and OpenWeatherMap (weather) for fact-based, relevant plans.
+- **Full-Stack Application:** Robust FastAPI backend and clean, responsive HTML/Jinja2 frontend.
+- **Database Persistence:** Saves all generated plans to a database (SQLite locally, PostgreSQL in production).
+- **CI/CD Pipeline:** Deployed on Railway with continuous deployment from GitHub.
 
 ---
-📝 Examples in Action
-Example 1: Learning Roadmap
 
-Goal: “Make a Roadmap to Learn Data Science in 6 months”
+## Example Plans
 
-<details> <summary>Generated Plan</summary>
+### 1. Learning Roadmap
 
-<details>
-<summary>Click to see the Generated Plan</summary>
+**Goal:** Make a Roadmap to Learn Data Science in 6 months
 
+**Generated Plan:**
+```json
 {
   "goal": "Make a Roadmap to Learn Data Science in 6 months",
   "overview": "A comprehensive 6-month roadmap progressing from fundamentals to advanced projects.",
@@ -86,16 +83,13 @@ Goal: “Make a Roadmap to Learn Data Science in 6 months”
     "Overwhelming scope"
   ]
 }
-</details>
 
 
-Example 2: Travel Itinerary
-
-Goal: “Plan a 4-day photography trip to London next week”
-
-<details> <summary>Generated Plan</summary>
+2. Travel Itinerary
+Goal: Plan a 4-day photography trip to London next week
 
 {
+  
   "goal": "Plan a 4-day photography trip to London",
   "overview": "Photography-focused itinerary covering landmarks, hidden gems, and street life.",
   "estimated_duration": "4 days",
@@ -121,11 +115,8 @@ Goal: “Plan a 4-day photography trip to London next week”
     "Tourist crowds"
   ]
 }
-</details>
 
-🏗 Architecture
-Code snippet
-
+Architecture
 flowchart TD
     subgraph "User's Browser"
         A[Frontend - index.html]
@@ -155,21 +146,16 @@ flowchart TD
     B --> A
 
 
-⚙️ Tech Stack
-
+Tech Stack
 Backend: Python, FastAPI, Uvicorn, Gunicorn
-
 AI: Google Gemini
-
 Database: SQLAlchemy ORM, SQLite (local), PostgreSQL (prod)
-
-Frontend: HTML, CSS, Vanilla JavaScript
-
+Frontend: HTML, CSS, Jinja2, Vanilla JavaScript
 Deployment: Railway (auto-deploy from GitHub)
-
 External APIs: Tavily (search), OpenWeatherMap (weather)
 
-🔧 Local Setup
+
+Local Setup
 Prerequisites: Python 3.10+, Git
 
 # 1. Clone
@@ -179,10 +165,10 @@ cd Task-Planner-Agent
 # 2. Create & activate virtual env
 python -m venv venv
 source venv/bin/activate   # macOS/Linux
-.\venv\Scripts\Activate.ps1 # Windows
+[Activate.ps1](http://_vscodecontentref_/0) # Windows
 
 # 3. Install dependencies
-pip install -r requirements.txt
+pip install -r [requirements.txt](http://_vscodecontentref_/1)
 
 # 4. Environment variables (.env)
 GEMINI_API_KEY="your_key"
@@ -194,9 +180,9 @@ uvicorn main:app --reload
 
 Runs at: http://localhost:8000
 
-🤖 AI Usage Disclosure
-
+AI Usage Disclosure
 This project was developed with help from GitHub Copilot and other AI tools for:
+
 Initial scaffolding & boilerplate
 API integrations (Gemini, Tavily, Weather)
 Error handling templates
