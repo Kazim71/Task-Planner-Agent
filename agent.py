@@ -233,7 +233,7 @@ class TaskPlanningAgent:
 
     def get_gemini_model(self):
         if not self.api_key or len(self.api_key) < 10:
-            # Fallback: Demo mode, no Gemini API
+            logger.warning("[FALLBACK] GEMINI_API_KEY missing or invalid. Using demo plan logic.")
             return None
         if self._model is None:
             import google.generativeai as genai
@@ -344,9 +344,8 @@ Be specific, realistic, and actionable in your planning."""
         import asyncio
         import traceback
         if not self.api_key or len(self.api_key) < 10:
-            logger.warning("GEMINI_API_KEY missing: running in fallback demo mode. Returning static plan.")
-            # Fallback: Return a static demo plan
-            return {
+            logger.warning("[FALLBACK] GEMINI_API_KEY missing: running in fallback demo mode. Returning static plan.")
+            fallback_plan = {
                 "goal": goal,
                 "overview": "Demo plan (Gemini API key missing)",
                 "estimated_duration": f"{num_days} days",
@@ -365,6 +364,8 @@ Be specific, realistic, and actionable in your planning."""
                 "success_metrics": ["Demo metric"],
                 "potential_challenges": ["Demo challenge"]
             }
+            logger.info(f"[FALLBACK] Returning fallback plan: {fallback_plan}")
+            return fallback_plan
         for attempt in range(max_attempts):
             prompt = prompts[0] if attempt == 0 else prompts[1]
             logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [DEBUG] Prompt length: {len(prompt)} characters (attempt {attempt+1})")
