@@ -167,24 +167,24 @@ External APIs: Tavily (search), OpenWeatherMap (weather)
 ## Local Setup
 Prerequisites: Python 3.10+, Git
 
-# 1. Clone
+### 1. Clone
 git clone https://github.com/YourUsername/Task-Planner-Agent.git
 cd Task-Planner-Agent
 
-# 2. Create & activate virtual env
+### 2. Create & activate virtual env
 python -m venv venv
 source venv/bin/activate   # macOS/Linux
 [Activate.ps1](http://_vscodecontentref_/0) # Windows
 
-# 3. Install dependencies
+### 3. Install dependencies
 pip install -r [requirements.txt](http://_vscodecontentref_/1)
 
-# 4. Environment variables (.env)
+### 4. Environment variables (.env)
 GEMINI_API_KEY="your_key"
 TAVILY_API_KEY="your_key"
 OPENWEATHER_API_KEY="your_key"
 
-# 5. Run locally
+### 5. Run locally
 uvicorn main:app --reload
 
 Runs at: http://localhost:8000
