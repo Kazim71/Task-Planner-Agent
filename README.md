@@ -87,8 +87,10 @@ The agent is versatile—capable of creating everything from technical learning 
 
 ### 2. Travel Itinerary
 
-Goal: Plan a 4-day photography trip to London next week
+**Goal:** Plan a 4-day photography trip to London next week
 
+**Generated Plan:**
+```json
 {
   
   "goal": "Plan a 4-day photography trip to London",
@@ -117,7 +119,9 @@ Goal: Plan a 4-day photography trip to London next week
   ]
 }
 
-### Architecture
+## Architecture
+
+```mermaid
 flowchart TD
     subgraph "User's Browser"
         A[Frontend - index.html]
@@ -147,7 +151,7 @@ flowchart TD
     B --> A
 
 
-### Tech Stack
+## Tech Stack
 Backend: Python, FastAPI, Uvicorn, Gunicorn
 AI: Google Gemini
 Database: SQLAlchemy ORM, SQLite (local), PostgreSQL (prod)
@@ -156,7 +160,7 @@ Deployment: Railway (auto-deploy from GitHub)
 External APIs: Tavily (search), OpenWeatherMap (weather)
 
 
-### Local Setup
+## Local Setup
 Prerequisites: Python 3.10+, Git
 
 # 1. Clone
@@ -181,7 +185,7 @@ uvicorn main:app --reload
 
 Runs at: http://localhost:8000
 
-### AI Usage Disclosure
+## AI Usage Disclosure
 This project was developed with help from GitHub Copilot and other AI tools for:
 
 Initial scaffolding & boilerplate
