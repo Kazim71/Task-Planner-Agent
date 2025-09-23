@@ -498,3 +498,8 @@ Traceback (most recent call last):
     raise ValueError("The AI returned a malformed plan. Could not parse JSON.")
 ValueError: The AI returned a malformed plan. Could not parse JSON.
 
+2025-09-23 17:31:09 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:11 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.

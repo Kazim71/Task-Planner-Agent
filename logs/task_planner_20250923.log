@@ -641,3 +641,37 @@ ValueError: The AI returned a malformed plan. Could not parse JSON.
 2025-09-23 17:13:09 - root - INFO - lifespan:33 - Application starting up...
 2025-09-23 17:13:09 - root - INFO - lifespan:36 - Database tables initialized successfully.
 2025-09-23 17:14:45 - root - INFO - lifespan:40 - Application shutting down...
+2025-09-23 17:30:49 - root - INFO - setup_logging:125 - Logging initialized - Level: INFO, File: logs\task_planner_20250923.log
+2025-09-23 17:30:49 - root - INFO - lifespan:33 - Application starting up...
+2025-09-23 17:30:49 - root - INFO - lifespan:36 - Database tables initialized successfully.
+2025-09-23 17:30:51 - root - INFO - setup_logging:125 - Logging initialized - Level: INFO, File: logs\task_planner_20250923.log
+2025-09-23 17:30:51 - root - INFO - lifespan:33 - Application starting up...
+2025-09-23 17:30:51 - root - INFO - lifespan:36 - Database tables initialized successfully.
+2025-09-23 17:31:09 - root - INFO - create_plan_endpoint:84 - Received request to create plan for goal: 'Plan a 4-day photography trip to London next week'
+2025-09-23 17:31:09 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:10 - root - INFO - create_plan_endpoint:84 - Received request to create plan for goal: 'Plan a 4-day photography trip to London next week'
+2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:10 - root - INFO - create_plan_endpoint:84 - Received request to create plan for goal: 'Plan a 4-day photography trip to London next week'
+2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:10 - root - INFO - create_plan_endpoint:84 - Received request to create plan for goal: 'Plan a 4-day photography trip to London next week'
+2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:31:11 - root - INFO - create_plan_endpoint:84 - Received request to create plan for goal: 'Plan a 4-day photography trip to London next week'
+2025-09-23 17:31:11 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
+2025-09-23 17:35:23 - root - INFO - lifespan:40 - Application shutting down...
+2025-09-23 17:35:42 - root - INFO - setup_logging:125 - Logging initialized - Level: INFO, File: logs\task_planner_20250923.log
+2025-09-23 17:35:42 - root - INFO - lifespan:33 - Application starting up...
+2025-09-23 17:35:42 - root - INFO - lifespan:36 - Database tables initialized successfully.
+2025-09-23 17:36:33 - root - INFO - create_plan_endpoint:84 - Received request to create plan for goal: 'Plan a 4-day photography trip to London next week'
+2025-09-23 17:36:33 - agent - INFO - __init__:99 - TaskPlanningAgent initialized successfully.
+2025-09-23 17:36:33 - root - INFO - create_plan_endpoint:96 - TaskPlanningAgent initialized successfully.
+2025-09-23 17:36:33 - agent - INFO - _select_tools:118 - Starting Pass 1: Tool Selection
+2025-09-23 17:36:35 - agent - INFO - _parse_json_response:107 - Attempting to parse AI response for tool selection.
+2025-09-23 17:36:35 - agent - INFO - _select_tools:124 - Selected tools: ['web_search', 'web_search', 'web_search']
+2025-09-23 17:36:45 - agent - INFO - generate_plan:153 - Starting Pass 2: Final Plan Generation
+2025-09-23 17:36:45 - agent - INFO - generate_plan:167 - Generating plan for goal: Plan a 4-day photography trip to London next week starting on 2025-09-24
+2025-09-23 17:36:53 - agent - INFO - _parse_json_response:107 - Attempting to parse AI response for final plan.
+2025-09-23 17:36:53 - agent - INFO - generate_plan:178 - Successfully generated and parsed final plan from AI.
+2025-09-23 17:36:53 - agent - INFO - save_plan_to_database:187 - Saving plan to database...
+2025-09-23 17:36:53 - agent - INFO - save_plan_to_database:196 - Plan saved with ID: 17
+2025-09-23 17:36:53 - root - INFO - create_plan_endpoint:104 - Plan saved to database with ID: 17
+2025-09-23 18:03:12 - root - INFO - lifespan:40 - Application shutting down...
