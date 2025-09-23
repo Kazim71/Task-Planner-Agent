@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -18,7 +18,7 @@ load_dotenv()
 
 # Import our custom modules
 from agent import TaskPlanningAgent
-from models import create_tables, get_all_plans
+from models import create_tables, get_all_plans, delete_plan # <-- Added delete_plan
 from exceptions import TaskPlannerException, handle_exception
 from logging_config import setup_logging
 
@@ -83,10 +83,8 @@ async def create_plan_endpoint(plan_request: PlanRequest):
     """Create a new plan for a given goal."""
     logger.info(f"Received request to create plan for goal: '{plan_request.goal}'")
     try:
-        # Step 1: Get the API key from the environment
         api_key = os.getenv("GEMINI_API_KEY")
 
-        # Step 2: Check if the key exists
         if not api_key:
             logger.error("FATAL ERROR: GEMINI_API_KEY not found in environment.")
             return JSONResponse(
@@ -94,21 +92,17 @@ async def create_plan_endpoint(plan_request: PlanRequest):
                 content={"success": False, "message": "Server is not configured with an API key."}
             )
         
-        # Step 3: Create the agent AND pass the key to it
         agent = TaskPlanningAgent(api_key=api_key)
         logger.info("TaskPlanningAgent initialized successfully.")
 
-        # Step 4: Generate the plan
         plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
         
-        # Step 5: Save plan to DB if requested
         plan_id = None
         if plan_request.save_to_db:
             plan_id = agent.save_plan_to_database(plan_data)
             if plan_id:
                 logger.info(f"Plan saved to database with ID: {plan_id}")
 
-        # Step 6: Format plan for display
         formatted_plan = agent.format_plan_output(plan_data)
 
         return PlanResponse(
@@ -146,6 +140,25 @@ async def get_plans_endpoint():
             status_code=500,
             content={"success": False, "message": "Failed to retrieve saved plans."}
         )
+
+# --- NEW ENDPOINT ADDED HERE ---
+@app.delete("/plans/{plan_id}", tags=["Core"])
+async def delete_plan_endpoint(plan_id: int):
+    """Delete a specific plan by its ID."""
+    try:
+        logger.info(f"Received request to delete plan with ID: {plan_id}")
+        
+        success = delete_plan(plan_id)
+        
+        if success:
+            return {"success": True, "message": f"Plan {plan_id} deleted successfully."}
+        else:
+            raise HTTPException(status_code=404, detail=f"Plan with ID {plan_id} not found.")
+
+    except Exception as e:
+        error = handle_exception(e)
+        logger.error(f"Failed to delete plan {plan_id}: {error.message}")
+        raise HTTPException(status_code=500, detail="Failed to delete the plan due to a server error.")
 
 # ==============================================================================
 # 5. HEALTH ENDPOINT

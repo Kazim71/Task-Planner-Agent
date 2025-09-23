@@ -637,3 +637,7 @@ Traceback (most recent call last):
     raise ValueError("The AI returned a malformed plan. Could not parse JSON.")
 ValueError: The AI returned a malformed plan. Could not parse JSON.
 
+2025-09-23 17:13:09 - root - INFO - setup_logging:125 - Logging initialized - Level: INFO, File: logs\task_planner_20250923.log
+2025-09-23 17:13:09 - root - INFO - lifespan:33 - Application starting up...
+2025-09-23 17:13:09 - root - INFO - lifespan:36 - Database tables initialized successfully.
+2025-09-23 17:14:45 - root - INFO - lifespan:40 - Application shutting down...
