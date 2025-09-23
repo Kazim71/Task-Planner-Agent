@@ -1,5 +1,6 @@
 import os
 import traceback
+import signal
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
@@ -56,12 +57,6 @@ def log_error(msg, exc=None):
     @app.get("/healthz", include_in_schema=False)
     async def healthz_ping():
         return {"status": "healthy"}
-def handle_shutdown(*_):
-    print("[RAILWAY] Received shutdown signal. Cleaning up...")
-    shutdown_event.set()
-
-signal.signal(signal.SIGTERM, handle_shutdown)
-signal.signal(signal.SIGINT, handle_shutdown)
 
 # --- Readiness/Liveness Probes ---
 @app.get("/ready")
