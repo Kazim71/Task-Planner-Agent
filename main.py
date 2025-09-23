@@ -1,3 +1,11 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import os
+app = FastAPI(
+    title="Task Planner Agent",
+    description="AI-powered task planning with Google Gemini",
+    version="1.0.0"
+)
 import traceback
 
 def log_error(msg, exc=None):
@@ -5,15 +13,7 @@ def log_error(msg, exc=None):
     if exc:
         print(traceback.format_exc())
 
-try:
-    from fastapi import FastAPI, Request
-    from fastapi.responses import JSONResponse
-    import os
-    app = FastAPI()
-    print("DEBUG: FastAPI app initialized")
-except Exception as e:
-    log_error("App initialization failed", e)
-    raise
+print("DEBUG: FastAPI app initialized")
 
 # Minimal root endpoint with error handling
 @app.get("/")
@@ -47,7 +47,6 @@ for key in ["GEMINI_API_KEY", "TAVILY_API_KEY", "OPENWEATHER_API_KEY"]:
 if missing_keys:
     print(f"[WARNING] Missing environment variables: {', '.join(missing_keys)}. Running in fallback mode.")
 from fastapi import FastAPI
-app = FastAPI()
 import os
 import signal
 import asyncio
@@ -143,7 +142,11 @@ def railway_error_handler(exc):
 
 # Simple Railway test endpoint (no external APIs)
 from fastapi import FastAPI
-app = FastAPI()
+app = FastAPI(
+    title="Task Planner Agent",
+    description="AI-powered task planning with Google Gemini",
+    version="1.0.0"
+)
 @app.get("/railway-test")
 def railway_test():
     return {"success": True, "message": "Railway deployment test OK"}
