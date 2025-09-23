@@ -373,8 +373,7 @@ Be specific, realistic, and actionable in your planning."""
             api_start_time = time.time()
             try:
                 try:
-                    model = self.get_gemini_model()
-                    response = model.generate_content(prompt)
+                    response = self.model.generate_content(prompt)
                     logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [DEBUG] Gemini response received (attempt {attempt+1})")
                 except Exception as api_exc:
                     logger.error(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [ERROR] Gemini failed (attempt {attempt+1}): {api_exc}\n{traceback.format_exc()}")
