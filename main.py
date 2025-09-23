@@ -1,3 +1,24 @@
+import traceback
+
+# Minimal always-up endpoints for Railway health checks
+@app.get("/", include_in_schema=False)
+async def root_ping():
+    """Minimal always-up root endpoint for Railway health checks."""
+    return {"status": "ok", "message": "Task Planner Agent is running."}
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz_ping():
+    """Minimal always-up health endpoint for Railway health checks."""
+    return {"status": "healthy"}
+@app.get("/", include_in_schema=False)
+async def root_ping():
+    """Minimal always-up root endpoint for Railway health checks."""
+    return {"status": "ok", "message": "Task Planner Agent is running."}
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz_ping():
+    """Minimal always-up health endpoint for Railway health checks."""
+    return {"status": "healthy"}
 import os
 import traceback
 from fastapi import FastAPI, Request
@@ -14,30 +35,27 @@ import traceback
 
 def log_error(msg, exc=None):
     print(f"[ERROR] {msg}")
-    if exc:
-        print(traceback.format_exc())
+    import os
+    import traceback
+    from fastapi import FastAPI, Request
+    from fastapi.responses import JSONResponse
+    from contextlib import asynccontextmanager
 
-print("DEBUG: FastAPI app initialized")
+    # Modern FastAPI app instance at the top
+    app = FastAPI(
+        title="Task Planner Agent",
+        description="AI-powered task planning with Google Gemini",
+        version="1.0.0"
+    )
 
+    # Minimal always-up endpoints for Railway health checks
+    @app.get("/", include_in_schema=False)
+    async def root_ping():
+        return {"status": "ok", "message": "Task Planner Agent is running."}
 
-
-
-# Fallback mode: Warn if critical env vars are missing
-missing_keys = []
-for key in ["GEMINI_API_KEY", "TAVILY_API_KEY", "OPENWEATHER_API_KEY"]:
-    if not os.getenv(key):
-        missing_keys.append(key)
-if missing_keys:
-    print(f"[WARNING] Missing environment variables: {', '.join(missing_keys)}. Running in fallback mode.")
-from fastapi import FastAPI
-import os
-import signal
-import asyncio
-
-# --- Railway Startup Timeout and Graceful Shutdown ---
-STARTUP_TIMEOUT = int(os.getenv('STARTUP_TIMEOUT', '30'))  # seconds
-shutdown_event = asyncio.Event()
-
+    @app.get("/healthz", include_in_schema=False)
+    async def healthz_ping():
+        return {"status": "healthy"}
 def handle_shutdown(*_):
     print("[RAILWAY] Received shutdown signal. Cleaning up...")
     shutdown_event.set()
