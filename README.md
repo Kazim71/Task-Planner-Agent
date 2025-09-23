@@ -1,3 +1,154 @@
+# Example Plans
+
+Below are three real examples demonstrating the Task Planner Agent's capabilities. Each example includes the original goal, the AI-generated structured plan, and any external data (weather, search results) incorporated.
+
+---
+
+### Example 1: Plan a 2-day vegetarian food tour in Hyderabad
+
+**Original Goal:**
+
+> Plan a 2-day vegetarian food tour in Hyderabad
+
+**AI-Generated Plan:**
+
+```
+{
+    "goal": "Plan a 2-day vegetarian food tour in Hyderabad",
+    "overview": "A culinary journey exploring Hyderabad's best vegetarian cuisine, from traditional Andhra thalis to modern cafes.",
+    "estimated_duration": "2 days",
+    "daily_breakdown": [
+        {
+            "day": 1,
+            "date": "2025-09-24",
+            "focus": "Traditional Andhra and South Indian cuisine",
+            "tasks": [
+                {"task": "Breakfast at Chutneys (Idli, Dosa, Upma)", "estimated_time": "1 hour", "priority": "high", "dependencies": []},
+                {"task": "Lunch at Rajdhani Thali (Vegetarian Thali)", "estimated_time": "1.5 hours", "priority": "high", "dependencies": []},
+                {"task": "Evening snack at Govind Dosas (Street food)", "estimated_time": "45 minutes", "priority": "medium", "dependencies": []},
+                {"task": "Dinner at Minerva Coffee Shop (South Indian classics)", "estimated_time": "1 hour", "priority": "high", "dependencies": []}
+            ],
+            "research_topics": ["Best local vegetarian restaurants", "Hyderabad food safety tips"],
+            "weather_relevant": true
+        },
+        {
+            "day": 2,
+            "date": "2025-09-25",
+            "focus": "Modern vegetarian cafes and desserts",
+            "tasks": [
+                {"task": "Breakfast at The Gallery Cafe (Continental vegetarian)", "estimated_time": "1 hour", "priority": "medium", "dependencies": []},
+                {"task": "Lunch at Tatva (Fusion vegetarian)", "estimated_time": "1.5 hours", "priority": "high", "dependencies": []},
+                {"task": "Dessert at Conçu (Eggless pastries)", "estimated_time": "45 minutes", "priority": "medium", "dependencies": []},
+                {"task": "Evening walk at Necklace Road (Street snacks)", "estimated_time": "1 hour", "priority": "low", "dependencies": []}
+            ],
+            "research_topics": ["Vegetarian cafes in Hyderabad", "Local dessert specialties"],
+            "weather_relevant": true
+        }
+    ],
+    "success_metrics": ["Visited at least 6 unique vegetarian eateries", "Tried both traditional and modern dishes"],
+    "potential_challenges": ["Restaurant wait times", "Weather affecting outdoor plans"]
+}
+```
+
+**External Data Incorporated:**
+- Weather: Checked Hyderabad weather for both days (e.g., "Partly cloudy, 32°C").
+- Web Search: Used Tavily to find top-rated vegetarian restaurants and cafes.
+
+---
+
+### Example 2: Organise a 5-step daily study routine for learning Python
+
+**Original Goal:**
+
+> Organise a 5-step daily study routine for learning Python
+
+**AI-Generated Plan:**
+
+```
+{
+    "goal": "Organise a 5-step daily study routine for learning Python",
+    "overview": "A focused daily routine to build Python skills through structured study and practice.",
+    "estimated_duration": "Daily routine (repeatable)",
+    "daily_breakdown": [
+        {
+            "day": 1,
+            "date": "2025-09-24",
+            "focus": "Python fundamentals",
+            "tasks": [
+                {"task": "Read 1 chapter from 'Automate the Boring Stuff with Python'", "estimated_time": "30 minutes", "priority": "high", "dependencies": []},
+                {"task": "Watch a Python tutorial video (YouTube)", "estimated_time": "20 minutes", "priority": "medium", "dependencies": []},
+                {"task": "Practice coding exercises on LeetCode", "estimated_time": "30 minutes", "priority": "high", "dependencies": []},
+                {"task": "Review notes and summarize key concepts", "estimated_time": "20 minutes", "priority": "medium", "dependencies": []},
+                {"task": "Join a Python discussion forum or group", "estimated_time": "20 minutes", "priority": "low", "dependencies": []}
+            ],
+            "research_topics": ["Best Python learning resources", "Common beginner mistakes"],
+            "weather_relevant": false
+        }
+    ],
+    "success_metrics": ["Completed all 5 steps daily", "Improved coding confidence"],
+    "potential_challenges": ["Staying consistent", "Balancing with other commitments"]
+}
+```
+
+**External Data Incorporated:**
+- Web Search: Used Tavily to find best Python tutorials and forums.
+- No weather data required for this indoor routine.
+
+---
+
+### Example 3: Create a weekend plan in Vizag with beach, hiking, and seafood
+
+**Original Goal:**
+
+> Create a weekend plan in Vizag with beach, hiking, and seafood
+
+**AI-Generated Plan:**
+
+```
+{
+    "goal": "Create a weekend plan in Vizag with beach, hiking, and seafood",
+    "overview": "A fun-filled weekend exploring Vizag's beaches, scenic hikes, and local seafood cuisine.",
+    "estimated_duration": "2 days (Saturday & Sunday)",
+    "daily_breakdown": [
+        {
+            "day": 1,
+            "date": "2025-09-27",
+            "focus": "Beach relaxation and local seafood",
+            "tasks": [
+                {"task": "Morning walk at RK Beach", "estimated_time": "1 hour", "priority": "high", "dependencies": []},
+                {"task": "Breakfast at local cafe (try idli & dosa)", "estimated_time": "45 minutes", "priority": "medium", "dependencies": []},
+                {"task": "Visit INS Kursura Submarine Museum", "estimated_time": "1 hour", "priority": "medium", "dependencies": []},
+                {"task": "Lunch at Sea Inn (seafood thali)", "estimated_time": "1.5 hours", "priority": "high", "dependencies": []},
+                {"task": "Evening at Rushikonda Beach (swimming, sunset)", "estimated_time": "2 hours", "priority": "high", "dependencies": []}
+            ],
+            "research_topics": ["Best seafood restaurants in Vizag", "Beach safety tips"],
+            "weather_relevant": true
+        },
+        {
+            "day": 2,
+            "date": "2025-09-28",
+            "focus": "Hiking and scenic viewpoints",
+            "tasks": [
+                {"task": "Morning hike to Kailasagiri Hill Park", "estimated_time": "2 hours", "priority": "high", "dependencies": []},
+                {"task": "Breakfast at hilltop cafe", "estimated_time": "45 minutes", "priority": "medium", "dependencies": []},
+                {"task": "Visit Dolphin's Nose viewpoint", "estimated_time": "1 hour", "priority": "medium", "dependencies": []},
+                {"task": "Lunch at local seafood shack", "estimated_time": "1.5 hours", "priority": "high", "dependencies": []},
+                {"task": "Afternoon at Yarada Beach (relax, swim)", "estimated_time": "2 hours", "priority": "high", "dependencies": []}
+            ],
+            "research_topics": ["Vizag hiking trails", "Weather forecast for weekend"],
+            "weather_relevant": true
+        }
+    ],
+    "success_metrics": ["Visited 2 beaches, 2 seafood restaurants, and 2 scenic viewpoints"],
+    "potential_challenges": ["Weather changes", "Crowds at popular spots"]
+}
+```
+
+**External Data Incorporated:**
+- Weather: Checked Vizag weather for the weekend (e.g., "Sunny, 30°C").
+- Web Search: Used Tavily to find best seafood restaurants and hiking trails.
+
+---
 
 # Task Planner Agent
 
@@ -46,32 +197,38 @@ git clone <repository-url>
 cd task-planner-agent
 python -m venv venv
 venv\Scripts\activate  # On Windows
-# or
-source venv/bin/activate  # On macOS/Linux
-pip install -r requirements.txt
-```
 
-### Environment Variables
-Create a `.env` file in the project root:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-# Optional for local DB:
-DATABASE_URL=sqlite:///./task_planner.db
-```
+```mermaid
+flowchart TD
+    User([User])
+    WebUI[Web Interface (Jinja2 Template)]
+    API[FastAPI API Server]
+    Agent[Task Planning Agent\n(Business Logic)]
+    DB[(SQLite Database)]
+    ORM[SQLAlchemy ORM]
+    Gemini[Google Gemini API]
+    Tavily[Tavily Web Search]
+    Weather[OpenWeatherMap]
 
-### Running Locally
-```bash
-python main.py
-# or for hot reload (if using FastAPI):
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-Visit [http://localhost:8000](http://localhost:8000)
+    %% User interaction flow
+    User -->|"Goal, Preferences"| WebUI
+    WebUI -->|"Form Submit"| API
+    API -->|"/plan, /debug, etc."| Agent
 
----
+    %% Agent logic and data flow
+    Agent -->|"Generate Plan"| Gemini
+    Agent -->|"Web Search"| Tavily
+    Agent -->|"Weather Data"| Weather
+    Agent -->|"Save/Retrieve Plan"| ORM
+    ORM -->|"DB Operations"| DB
 
-## 5. API Documentation
-
-**Base URL:**
+    %% Responses
+    Gemini -->|"AI Plan"| Agent
+    Tavily -->|"Search Results"| Agent
+    Weather -->|"Weather Info"| Agent
+    Agent -->|"Plan Data"| API
+    API -->|"JSON Response"| WebUI
+    WebUI -->|"Display Plan"| User
 ```
 https://task-planner-agent-production.up.railway.app/
 ```
