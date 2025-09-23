@@ -1,3 +1,58 @@
+# --- Railway Deployment Checks ---
+import os
+import sys
+
+# Ensure correct port binding for Railway
+def get_railway_port():
+    port = os.getenv('PORT')
+    if port:
+        try:
+            return int(port)
+        except Exception:
+            print(f"DEBUG: Invalid PORT value: {port}")
+            return 8000
+    return 8000
+
+# Railway-specific error handler
+def railway_error_handler(exc):
+    import traceback
+    print(f"[RAILWAY ERROR] {exc}\n{traceback.format_exc()}")
+    return {"success": False, "error": str(exc)}
+
+# Simple Railway test endpoint (no external APIs)
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/railway-test")
+def railway_test():
+    return {"success": True, "message": "Railway deployment test OK"}
+
+# --- End Railway Deployment Checks ---
+print("DEBUG: Application starting...")
+try:
+    # Existing imports
+    import os
+    import sys
+    import traceback
+    from fastapi import FastAPI, Request, HTTPException
+    from fastapi.responses import JSONResponse, HTMLResponse
+    from fastapi.templating import Jinja2Templates
+    from fastapi.staticfiles import StaticFiles
+    from starlette.middleware.cors import CORSMiddleware
+    from starlette.middleware.sessions import SessionMiddleware
+    from starlette.responses import RedirectResponse
+    import agent
+    import tools
+    import models
+    import logging_config
+    import validators
+    import exceptions
+    print("DEBUG: All imports successful")
+except ImportError as e:
+    print(f"DEBUG: Import error: {e}")
+    sys.exit(1)
+except Exception as e:
+    print(f"DEBUG: Unexpected startup error: {e}\n{traceback.format_exc()}")
+    sys.exit(1)
 # Minimal dependency test endpoint for plan generation
 @app.get("/test-plan")
 async def test_plan_minimal():
