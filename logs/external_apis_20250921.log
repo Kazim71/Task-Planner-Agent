@@ -1,1 +1,0 @@
-2025-09-21 00:03:03 - external_apis - INFO - log_external_api_call:216 - External API - Gemini | POST generate_content | Status: 200 | Time: 8.872s | Data: {'prompt_length': 1813, 'goal_length': 19}

@@ -1,505 +1,300 @@
-2025-09-23 14:42:59 - exceptions - ERROR - _log_error:91 - [UNEXPECTED_ERROR] Unexpected error: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key' | Original: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key'
-2025-09-23 14:42:59 - exceptions - ERROR - _log_error:93 - Original error traceback: Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\main.py", line 485, in create_plan_endpoint
-    agent = TaskPlanningAgent()
-TypeError: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key'
-
-2025-09-23 14:42:59 - root - ERROR - create_plan_endpoint:489 - Failed to initialize TaskPlanningAgent: Unexpected error: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key'
-2025-09-23 15:28:52 - exceptions - ERROR - _log_error:91 - [UNEXPECTED_ERROR] Unexpected error: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key' | Original: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key'
-2025-09-23 15:28:52 - exceptions - ERROR - _log_error:93 - Original error traceback: Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\main.py", line 488, in create_plan_endpoint
-    agent = TaskPlanningAgent()
-TypeError: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key'
-
-2025-09-23 15:28:52 - root - ERROR - create_plan_endpoint:492 - Failed to initialize TaskPlanningAgent: Unexpected error: TaskPlanningAgent.__init__() missing 1 required positional argument: 'api_key'
-2025-09-23 15:43:41 - exceptions - ERROR - _log_error:91 - [UNEXPECTED_ERROR] Unexpected error: 'TaskPlanningAgent' object has no attribute 'system_prompt' | Original: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-2025-09-23 15:43:41 - exceptions - ERROR - _log_error:93 - Original error traceback: Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\main.py", line 102, in create_plan_endpoint
-    plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Projects\Task Planner Agent\agent.py", line 301, in generate_plan
-    prompt_base = self.system_prompt.replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
-                  ^^^^^^^^^^^^^^^^^^
-AttributeError: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-
-2025-09-23 15:43:41 - root - ERROR - create_plan_endpoint:124 - Failed to create plan: Unexpected error: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\main.py", line 102, in create_plan_endpoint
-    plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Projects\Task Planner Agent\agent.py", line 301, in generate_plan
-    prompt_base = self.system_prompt.replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
-                  ^^^^^^^^^^^^^^^^^^
-AttributeError: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-
-2025-09-23 15:47:29 - exceptions - ERROR - _log_error:91 - [UNEXPECTED_ERROR] Unexpected error: 'TaskPlanningAgent' object has no attribute 'system_prompt' | Original: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-2025-09-23 15:47:29 - exceptions - ERROR - _log_error:93 - Original error traceback: Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\main.py", line 102, in create_plan_endpoint
-    plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Projects\Task Planner Agent\agent.py", line 301, in generate_plan
-    prompt_base = self.system_prompt.replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
-                  ^^^^^^^^^^^^^^^^^^
-AttributeError: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-
-2025-09-23 15:47:29 - root - ERROR - create_plan_endpoint:124 - Failed to create plan: Unexpected error: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\main.py", line 102, in create_plan_endpoint
-    plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Projects\Task Planner Agent\agent.py", line 301, in generate_plan
-    prompt_base = self.system_prompt.replace('[User\'s Departure City]', departure_city).replace('[User\'s Citizenship]', citizenship)
-                  ^^^^^^^^^^^^^^^^^^
-AttributeError: 'TaskPlanningAgent' object has no attribute 'system_prompt'
-
-2025-09-23 16:19:58 - agent - ERROR - _parse_json_response:83 - JSON parsing failed: Expecting ',' delimiter: line 75 column 15 (char 2350)
-Raw response was: {
-  "goal": "Learn AI/ML in 1 month",
-  "overview": "This plan provides a fast-paced introduction to AI/ML fundamentals, focusing on practical application through mini-projects.",
-  "estimated_duration": "1 month",
-  "daily_breakdown": [
-    {
-      "day": 1,
-      "date": "2025-09-24",
-      "focus": "Introduction to AI/ML and Python Setup",
-      "tasks": [
-        {
-          "task": "Install Anaconda and necessary libraries (NumPy, Pandas, Scikit-learn).",
-          "estimated_time": "2 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Complete a beginner Python tutorial focusing on data structures and manipulation.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 2,
-      "date": "2025-09-25",
-      "focus": "Supervised Learning - Linear Regression",
-      "tasks": [
-        {
-          "task": "Learn the fundamentals of linear regression through online courses (e.g., Khan Academy, StatQuest).",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Implement linear regression on a small dataset using Scikit-learn.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 3,
-      "date": "2025-09-26",
-      "focus": "Supervised Learning - Logistic Regression & Classification",
-      "tasks": [
-        {
-          "task": "Understand logistic regression and its applications in classification.",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Build a simple classification model (e.g., spam detection) using logistic regression.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 4,
-      "date": "2025-09-27",
-      "focus": "Model Evaluation & Selection",
-      "tasks": [
-        {
-          "task": "Learn about key model evaluation metrics (accuracy, precision, recall, F1-score).",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Practice evaluating the models built in the previous days and compare their performance.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 5-28,
-      "date": "2025-09-28 - 2025-10-22",
-      "focus": "Deep Dive into a Specific AI/ML Area and Project",
-      "tasks":[
-          {
-              "task": "Choose one area (e.g., NLP, Computer Vision, Time Series Analysis) and dedicate time to learning its core concepts.",
-              "estimated_time": "1 week",
-              "priority": "high"
-          },
-          {
-              "task": "Work on a more substantial project related to your chosen area.  This project will need to demonstrate your learning.",
-              "estimated_time": "3 weeks",
-              "priority": "high"
-          }
-      ]
-
-    },
-    {
-      "day": 29,
-      "date": "2025-10-23",
-      "focus": "Project Refinement and Documentation",
-      "tasks": [
-        {
-          "task": "Refine your project, improve its performance, and thoroughly document the process.",
-          "estimated_time": "8 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 30,
-      "date": "2025-10-24",
-      "focus": "Review and Next Steps",
-      "tasks": [
-        {
-          "task": "Review all materials and consolidate your learning.  Plan next steps in your AI/ML journey.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    }
-  ],
-  "success_metrics": [
-    "Successfully complete at least two mini-projects demonstrating key AI/ML concepts.",
-    "Develop a portfolio showcasing your projects.",
-    "Gain a fundamental understanding of supervised learning and at least one advanced AI/ML area."
-  ],
-  "potential_challenges": [
-    "Time constraints – 1 month is a short timeframe for significant learning.",
-    "Difficulty grasping mathematical concepts – focus on practical application to mitigate this.",
-    "Finding suitable datasets for projects – leverage publicly available datasets (Kaggle, UCI Machine Learning Repository)."
-  ]
+2025-09-23 18:28:41 - agent - ERROR - _select_tools:128 - Failed to select tools: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 17.258216754s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
 }
-
-2025-09-23 16:19:58 - agent - ERROR - generate_plan:119 - Error during Gemini API call or parsing: The AI returned a malformed plan. Could not parse JSON.
-Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\agent.py", line 81, in _parse_json_response
-    return json.loads(response_text)
-           ~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-           ~~~~~~~~~~~~~~~~~~~~~~~^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 361, in raw_decode
-    obj, end = self.scan_once(s, idx)
-               ~~~~~~~~~~~~~~^^^^^^^^
-json.decoder.JSONDecodeError: Expecting ',' delimiter: line 75 column 15 (char 2350)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\agent.py", line 115, in generate_plan
-    parsed_plan = self._parse_json_response(response.text)
-  File "D:\Projects\Task Planner Agent\agent.py", line 84, in _parse_json_response
-    raise ValueError("The AI returned a malformed plan. Could not parse JSON.")
-ValueError: The AI returned a malformed plan. Could not parse JSON.
-
-2025-09-23 16:20:10 - agent - ERROR - _parse_json_response:83 - JSON parsing failed: Expecting ',' delimiter: line 75 column 15 (char 2312)
-Raw response was: {
-  "goal": "Learn AI/ML in 1 month",
-  "overview": "This plan focuses on foundational AI/ML concepts and practical application through mini-projects, prioritizing hands-on experience within a month.",
-  "estimated_duration": "1 month",
-  "daily_breakdown": [
-    {
-      "day": 1,
-      "date": "2025-09-24",
-      "focus": "Setting up the environment and Introduction to Python",
-      "tasks": [
-        {
-          "task": "Install Anaconda, Jupyter Notebook, and essential Python libraries (NumPy, Pandas, Matplotlib).",
-          "estimated_time": "2 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Complete a Python tutorial focusing on data structures and control flow.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 2,
-      "date": "2025-09-25",
-      "focus": "Introduction to Linear Algebra and Calculus",
-      "tasks": [
-        {
-          "task": "Review linear algebra concepts: vectors, matrices, operations.",
-          "estimated_time": "3 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Review basic calculus concepts: derivatives, integrals.",
-          "estimated_time": "3 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 3,
-      "date": "2025-09-26",
-      "focus": "Linear Regression",
-      "tasks": [
-        {
-          "task": "Learn the fundamentals of linear regression using Python libraries (Scikit-learn).",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Implement a simple linear regression model on a small dataset (e.g., from Kaggle).",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 4,
-      "date": "2025-09-27",
-      "focus": "Logistic Regression & Classification",
-      "tasks": [
-        {
-          "task": "Learn logistic regression and its application in classification problems.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Implement a logistic regression model for a binary classification problem.",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 5-28,
-      "date": "2025-09-28 - 2025-10-22",
-      "focus": "Deep Dive into Specific Algorithms (One per Day), Mini Project Development",
-      "tasks": [
-        {
-          "task": "Select 3 additional algorithms (e.g., Decision Trees, Support Vector Machines, Naive Bayes). Study, implement and test each on small datasets. (3 hours per algorithm, 6 hours per day)",
-          "estimated_time": "42 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Develop a small-scale AI/ML project applying one or more of the studied algorithms. Focus on data cleaning, feature engineering, model training, and evaluation.",
-          "estimated_time": "70 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 29-30,
-      "date": "2025-10-23 - 2025-10-24",
-      "focus": "Project Refinement, Documentation, and Presentation Prep",
-      "tasks": [
-        {
-          "task": "Refine the project, addressing identified areas of improvement.",
-          "estimated_time": "20 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Document the project clearly (code, methodology, results). Prepare a short presentation summarizing the project.",
-          "estimated_time": "10 hours",
-          "priority": "high"
-        }
-      ]
-    }
-  ],
-  "success_metrics": [
-    "Complete 4 mini-projects applying different AI/ML algorithms.",
-    "Present a well-documented AI/ML project demonstrating a working model and understanding of evaluation metrics.",
-    "Demonstrate proficiency in using Python libraries for AI/ML tasks."
-  ],
-  "potential_challenges": [
-    "Insufficient mathematical background may hinder understanding some algorithms.",
-    "Finding suitable, readily available datasets for projects.",
-    "Troubleshooting unexpected issues in code implementation."
-  ]
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
 }
-
-2025-09-23 16:20:10 - agent - ERROR - generate_plan:119 - Error during Gemini API call or parsing: The AI returned a malformed plan. Could not parse JSON.
-Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\agent.py", line 81, in _parse_json_response
-    return json.loads(response_text)
-           ~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-           ~~~~~~~~~~~~~~~~~~~~~~~^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 361, in raw_decode
-    obj, end = self.scan_once(s, idx)
-               ~~~~~~~~~~~~~~^^^^^^^^
-json.decoder.JSONDecodeError: Expecting ',' delimiter: line 75 column 15 (char 2312)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\agent.py", line 115, in generate_plan
-    parsed_plan = self._parse_json_response(response.text)
-  File "D:\Projects\Task Planner Agent\agent.py", line 84, in _parse_json_response
-    raise ValueError("The AI returned a malformed plan. Could not parse JSON.")
-ValueError: The AI returned a malformed plan. Could not parse JSON.
-
-2025-09-23 16:21:08 - agent - ERROR - _parse_json_response:83 - JSON parsing failed: Expecting ',' delimiter: line 92 column 15 (char 2868)
-Raw response was: {
-  "goal": "Learn AI/ML in 1 month",
-  "overview": "This plan provides a fast-paced, intensive introduction to key AI/ML concepts through online courses, practical projects, and focused study, culminating in a small-scale project demonstration.",
-  "estimated_duration": "1 month",
-  "daily_breakdown": [
-    {
-      "day": 1,
-      "date": "2025-09-24",
-      "focus": "Introduction to AI/ML and Python Setup",
-      "tasks": [
-        {
-          "task": "Complete a introductory AI/ML overview course (e.g., fast.ai's Practical Deep Learning for Coders, Part 1, select relevant sections).",
-          "estimated_time": "8 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Set up Python environment with necessary libraries (NumPy, Pandas, Scikit-learn).",
-          "estimated_time": "2 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 2,
-      "date": "2025-09-25",
-      "focus": "Python Fundamentals for ML",
-      "tasks": [
-        {
-          "task": "Review essential Python concepts: data structures (lists, dictionaries), loops, functions.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Practice data manipulation with NumPy and Pandas using online tutorials or exercises.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 3,
-      "date": "2025-09-26",
-      "focus": "Supervised Learning Introduction",
-      "tasks": [
-        {
-          "task": "Learn about linear regression and logistic regression with Scikit-learn.",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Implement a simple linear regression model on a small dataset (e.g., Iris dataset).",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 4,
-      "date": "2025-09-27",
-      "focus": "Supervised Learning Continued",
-      "tasks": [
-        {
-          "task": "Learn about decision trees and random forests.",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Implement a random forest classifier on a dataset.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 5,
-      "date": "2025-09-28",
-      "focus": "Unsupervised Learning Introduction",
-      "tasks": [
-        {
-          "task": "Learn about clustering algorithms (K-means, hierarchical clustering).",
-          "estimated_time": "6 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Apply K-means clustering on a dataset and visualize the results.",
-          "estimated_time": "4 hours",
-          "priority": "high"
-        }
-      ]
-    },
-    {
-      "day": 6-30,
-      "date": "2025-09-29 - 2025-10-23",
-      "focus": "Advanced Topics and Project",
-      "tasks": [
-        {
-          "task": "Choose one of the following: Explore neural networks with a framework like TensorFlow/Keras; delve deeper into a specific algorithm; focus on model evaluation metrics and techniques.",
-          "estimated_time": "120 hours",
-          "priority": "high"
-        },
-        {
-          "task": "Develop a small AI/ML project that demonstrates your skills (e.g., image classification, sentiment analysis).",
-          "estimated_time": "120 hours",
-          "priority": "high"
-        }
-      ]
-    }
-  ],
-  "success_metrics": [
-    "Complete all tasks in the daily breakdown.",
-    "Successfully implement and demonstrate a functional AI/ML project.",
-    "Articulate understanding of core AI/ML concepts in a concise manner."
-  ],
-  "potential_challenges": [
-    "Time constraints and intensive workload.",
-    "Difficulty grasping complex mathematical concepts.",
-    "Troubleshooting errors in code and model implementation."
-  ]
+, retry_delay {
+  seconds: 17
 }
-
-2025-09-23 16:21:08 - agent - ERROR - generate_plan:119 - Error during Gemini API call or parsing: The AI returned a malformed plan. Could not parse JSON.
+]
+2025-09-23 18:28:42 - agent - ERROR - generate_plan:181 - Error during final plan generation: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+]
 Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\agent.py", line 81, in _parse_json_response
-    return json.loads(response_text)
-           ~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-           ~~~~~~~~~~~~~~~~~~~~~~~^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Kazim\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 361, in raw_decode
-    obj, end = self.scan_once(s, idx)
-               ~~~~~~~~~~~~~~^^^^^^^^
-json.decoder.JSONDecodeError: Expecting ',' delimiter: line 92 column 15 (char 2868)
+  File "D:\Projects\Task Planner Agent\agent.py", line 176, in generate_plan
+    response = self.model.generate_content(full_prompt)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+        request,
+        **request_options,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+        request,
+    ...<2 lines>...
+        metadata=metadata,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+        target,
+    ...<3 lines>...
+        on_error=on_error,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\grpc_helpers.py", line 78, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ResourceExhausted: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+]
 
-During handling of the above exception, another exception occurred:
+2025-09-23 18:28:42 - exceptions - ERROR - _log_error:91 - [UNEXPECTED_ERROR] Unexpected error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+] | Original: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+]
+2025-09-23 18:28:42 - exceptions - ERROR - _log_error:93 - Original error traceback: Traceback (most recent call last):
+  File "D:\Projects\Task Planner Agent\main.py", line 98, in create_plan_endpoint
+    plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\Task Planner Agent\agent.py", line 176, in generate_plan
+    response = self.model.generate_content(full_prompt)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+        request,
+        **request_options,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+        request,
+    ...<2 lines>...
+        metadata=metadata,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+        target,
+    ...<3 lines>...
+        on_error=on_error,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\grpc_helpers.py", line 78, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ResourceExhausted: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+]
 
+2025-09-23 18:28:42 - root - ERROR - create_plan_endpoint:118 - Failed to create plan: Unexpected error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+]
 Traceback (most recent call last):
-  File "D:\Projects\Task Planner Agent\agent.py", line 115, in generate_plan
-    parsed_plan = self._parse_json_response(response.text)
-  File "D:\Projects\Task Planner Agent\agent.py", line 84, in _parse_json_response
-    raise ValueError("The AI returned a malformed plan. Could not parse JSON.")
-ValueError: The AI returned a malformed plan. Could not parse JSON.
+  File "D:\Projects\Task Planner Agent\main.py", line 98, in create_plan_endpoint
+    plan_data = await agent.generate_plan(goal=plan_request.goal, start_date=plan_request.start_date)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\Task Planner Agent\agent.py", line 176, in generate_plan
+    response = self.model.generate_content(full_prompt)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+        request,
+        **request_options,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+        request,
+    ...<2 lines>...
+        metadata=metadata,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+        target,
+    ...<3 lines>...
+        on_error=on_error,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+  File "D:\Projects\Task Planner Agent\venv\Lib\site-packages\google\api_core\grpc_helpers.py", line 78, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ResourceExhausted: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 50
+Please retry in 16.885559723s. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 50
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 16
+}
+]
 
-2025-09-23 17:31:09 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
-2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
-2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
-2025-09-23 17:31:10 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
-2025-09-23 17:31:11 - root - ERROR - create_plan_endpoint:89 - FATAL ERROR: GEMINI_API_KEY not found in environment.
