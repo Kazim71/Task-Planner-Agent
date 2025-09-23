@@ -1099,18 +1099,3 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # Run the application
-if __name__ == "__main__":
-    import uvicorn
-    
-    # Load environment variables
-    from dotenv import load_dotenv
-    load_dotenv()
-    
-    # Run the server
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
