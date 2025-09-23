@@ -15,29 +15,8 @@ def log_error(msg, exc=None):
 
 print("DEBUG: FastAPI app initialized")
 
-# Minimal root endpoint with error handling
-@app.get("/")
-async def home():
-    try:
-        return {"status": "working", "message": "Task Planner Agent"}
-    except Exception as e:
-        log_error("Root endpoint failed", e)
-        return JSONResponse(status_code=500, content={"error": str(e)})
 
-# Minimal health endpoint with error handling
-@app.get("/health")
-async def health():
-    try:
-        return {"status": "healthy"}
-    except Exception as e:
-        log_error("Health endpoint failed", e)
-        return JSONResponse(status_code=500, content={"error": str(e)})
 
-# Global exception handler for uncaught errors
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    log_error(f"Unhandled exception for {request.url}", exc)
-    return JSONResponse(status_code=500, content={"error": str(exc), "trace": traceback.format_exc()})
 
 # Fallback mode: Warn if critical env vars are missing
 missing_keys = []
@@ -73,52 +52,7 @@ async def liveness_probe():
 from datetime import datetime
 from fastapi import APIRouter
 
-# Lightweight root endpoint
-@app.get("/")
-async def root():
-    return {"status": "ready", "message": "Task Planner Agent is starting..."}
 
-# Health check endpoint with timeouts
-@app.get("/health")
-async def health_check():
-    import asyncio
-    statuses = {}
-    # Gemini check (timeout 3s)
-    try:
-        from agent import TaskPlanningAgent
-        async def gemini_check():
-            agent = TaskPlanningAgent()
-            model = agent.get_gemini_model()
-            # Minimal call, but don't block
-            return True
-        statuses['gemini'] = await asyncio.wait_for(gemini_check(), timeout=3)
-    except Exception as e:
-        statuses['gemini'] = f"error: {e}"
-    # Tavily check (timeout 2s)
-    try:
-        import tools
-        async def tavily_check():
-            return 'CONFIG ERROR' not in tools.tavily_web_search('test')
-        statuses['tavily'] = await asyncio.wait_for(tavily_check(), timeout=2)
-    except Exception as e:
-        statuses['tavily'] = f"error: {e}"
-    # OpenWeather check (timeout 2s)
-    try:
-        import tools
-        async def weather_check():
-            return 'CONFIG ERROR' not in tools.get_weather('London')
-        statuses['openweather'] = await asyncio.wait_for(weather_check(), timeout=2)
-    except Exception as e:
-        statuses['openweather'] = f"error: {e}"
-    # DB check (timeout 2s)
-    try:
-        import models
-        async def db_check():
-            return True  # Assume DB is ready if import works
-        statuses['database'] = await asyncio.wait_for(db_check(), timeout=2)
-    except Exception as e:
-        statuses['database'] = f"error: {e}"
-    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "services": statuses}
 # --- Railway Deployment Checks ---
 import os
 import sys
