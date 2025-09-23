@@ -83,6 +83,7 @@ The agent is versatile—capable of creating everything from technical learning 
     "Overwhelming scope"
   ]
 }
+```
 
 
 ### 2. Travel Itinerary
@@ -118,38 +119,41 @@ The agent is versatile—capable of creating everything from technical learning 
     "Tourist crowds"
   ]
 }
+```
 
-## Architecture
-
+## Architecture Diagram
 ```mermaid
-flowchart TD
-    subgraph "User's Browser"
-        A[Frontend - index.html]
+graph TB
+    subgraph "Frontend Layer"
+        A[Web Browser] --> B[Jinja2 Templates]
+        B --> C[HTML/CSS/JavaScript]
     end
-
-    subgraph "Railway.app Cloud Platform"
-        B[FastAPI Backend - main.py]
-        C[Database - PostgreSQL/SQLite]
+    subgraph "API Layer"
+        D[FastAPI Server] --> E[Request Validation]
+        E --> F[Route Handlers]
     end
-    
-    subgraph "AI & Tools"
-        D[AI Agent - agent.py]
-        E[Google Gemini API]
-        F[External Tools - tools.py]
-        G[Tavily Web Search API]
-        H[OpenWeatherMap API]
+    subgraph "Business Logic"
+        F --> G[Task Planning Agent]
+        G --> H[Google Gemini 2.5 Pro]
+        G --> I[Web Search Tool]
+        G --> J[Weather Tool]
     end
-
-    A --> B
-    B --> D
-    B --> C
-    D --> E
-    D --> F
+    subgraph "Data Layer"
+        K[SQLite Database] --> L[SQLAlchemy ORM]
+        L --> M[Plan Models]
+    end
+    subgraph "External Services"
+        N[Tavily API] --> O[Web Search Results]
+        P[OpenWeatherMap API] --> Q[Weather Data]
+    end
+    A --> D
     F --> G
-    F --> H
-    D --> B
-    B --> A
-
+    G --> K
+    I --> N
+    J --> P
+    O --> G
+    Q --> G
+```
 
 ## Tech Stack
 Backend: Python, FastAPI, Uvicorn, Gunicorn
@@ -187,7 +191,6 @@ Runs at: http://localhost:8000
 
 ## AI Usage Disclosure
 This project was developed with help from GitHub Copilot and other AI tools for:
-
 Initial scaffolding & boilerplate
 API integrations (Gemini, Tavily, Weather)
 Error handling templates
