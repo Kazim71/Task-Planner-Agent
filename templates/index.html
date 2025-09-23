@@ -3,409 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>Task Planner Agent</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f8f9fa;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: #007bff;
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .form-section {
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #495057;
-        }
-
-        input[type="text"], 
-        input[type="date"], 
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-
-        input[type="text"]:focus, 
-        input[type="date"]:focus, 
-        textarea:focus {
-            outline: 0;
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-        }
-
-        .btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease-in-out;
-            width: 100%;
-        }
-
-        .btn:hover {
-            background: #0056b3;
-        }
-
-        .btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-            color: #6c757d;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #007bff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .result-section {
-            display: none;
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .plan-output {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 20px;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.4;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .plans-section {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .plans-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .plans-header h2 {
-            font-size: 1.5rem;
-            color: #495057;
-        }
-
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 14px;
-            width: auto;
-        }
-
-        .search-box {
-            margin-bottom: 20px;
-        }
-
-        .search-box input {
-            padding: 10px;
-            font-size: 14px;
-        }
-
-        .plans-list {
-            display: grid;
-            gap: 15px;
-        }
-
-        .plan-card {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 20px;
-            transition: box-shadow 0.15s ease-in-out;
-        }
-
-        .plan-card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .plan-title {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-        }
-
-        .plan-meta {
-            color: #6c757d;
-            font-size: 14px;
-            margin-bottom: 12px;
-        }
-
-        .plan-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-        }
-
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        .message {
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .message-content {
-            position: relative;
-        }
-        
-        .error-details {
-            margin-top: 10px;
-            padding: 10px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 4px;
-            font-size: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        .error-details-container {
-            font-family: monospace;
-        }
-        
-        .error-section {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: rgba(220, 53, 69, 0.1);
-            border-left: 3px solid #dc3545;
-        }
-        
-        .error-field {
-            margin-bottom: 5px;
-            padding: 4px;
-            background: rgba(0,0,0,0.05);
-        }
-        
-        .error-detail {
-            margin-bottom: 5px;
-            padding: 4px;
-            background: rgba(0,0,0,0.05);
-            font-family: monospace;
-            white-space: pre-wrap;
-        }
-        
-        .close-btn {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: inherit;
-            opacity: 0.7;
-        }
-        
-        .close-btn:hover {
-            opacity: 1;
-        }
-
-        .message.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .message.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .error {
-            color: #dc3545;
-            font-weight: 500;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 4px;
-            }
-            
-            .header {
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            .plans-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: stretch;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: #007bff; color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2rem; margin-bottom: 8px; font-weight: 600; }
+        .content { padding: 30px; }
+        h2, h3 { margin-bottom: 20px; color: #495057; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.2rem; margin-top: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: #495057; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 16px; margin-bottom: 20px; }
+        .btn { background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 16px; font-weight: 500; cursor: pointer; width: 100%; transition: background-color 0.15s ease-in-out; }
+        .btn:hover { background: #0056b3; }
+        .plan-output { margin-top: 20px; }
+        .message { padding: 15px; border-radius: 4px; font-weight: 500; }
+        .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .plans-section { margin-top: 30px; padding-top: 30px; border-top: 1px solid #dee2e6; }
+        .plans-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-small { padding: 8px 16px; font-size: 14px; width: auto; }
+        .plan-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+        .plan-title { font-weight: 600; color: #495057; margin-bottom: 8px; }
+        .plan-meta { color: #6c757d; font-size: 14px; margin-bottom: 12px; }
+        .plan-actions { display: flex; gap: 10px; }
+        .btn-secondary { background: #6c757d; }
+        .btn-danger { background: #dc3545; }
+        .plan-view { border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-top: 20px;}
+        .plan-view-day { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+        .plan-view-day:last-child { border-bottom: none; margin-bottom: 0; }
+        .plan-view-day ul { list-style-position: inside; padding-left: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ title }}</h1>
+            <h1>Task Planner Agent</h1>
             <p>AI-powered task planning with Google Gemini</p>
         </div>
-
         <div class="content">
-            <!-- Goal Input Form -->
             <div class="form-section">
                 <h2>Create a New Plan</h2>
                 <form id="goal-form">
-                    <div class="form-group">
-                        <label for="goal">Task Description</label>
-                        <input type="text" id="goal" name="goal" placeholder="e.g. Learn Python, Plan a trip" required>
-                    </div>
+                    <label for="goal">Task Description</label>
+                    <input type="text" id="goal" name="goal" placeholder="e.g. Learn Data Science, Plan a trip to Austria" required>
                     <button type="submit" class="btn">Generate Plan</button>
                 </form>
-                <div id="plan-output" class="plan-output" style="margin-top:20px;"></div>
+                <div id="plan-output"></div>
             </div>
-
-            <!-- Results Section -->
-            <div class="result-section" id="resultSection">
-                <h3>Your Generated Plan</h3>
-                <div class="plan-output" id="planOutput"></div>
-            </div>
-
-            <!-- Plans List Section -->
             <div class="plans-section">
                 <div class="plans-header">
                     <h2>Saved Plans</h2>
                     <button class="btn btn-small" id="refresh-plans">Refresh</button>
                 </div>
-                <div class="plans-list" id="plansList">
-                    <p>Loading saved plans...</p>
-                </div>
+                <div class="plans-list" id="plansList"><p>Loading saved plans...</p></div>
             </div>
         </div>
     </div>
 
-    <script>
-    // Minimal, working JavaScript for basic functionality only
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('goal-form');
         const goalInput = document.getElementById('goal');
@@ -420,34 +78,56 @@
             e.preventDefault();
             const goal = goalInput.value.trim();
             if (!goal) {
-                planOutput.innerHTML = '<div class="error">Please enter a goal.</div>';
+                planOutput.innerHTML = '<div class="message error">Please enter a goal.</div>';
                 return;
             }
             planOutput.innerHTML = '<div>Generating plan...</div>';
             fetch('/plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ goal })
+                body: JSON.stringify({ goal: goal, save_to_db: true })
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.plan) {
-                    planOutput.innerHTML = '<div class="message success">Plan generated successfully!</div>';
+                if (data.success && data.plan_data) {
+                    planOutput.innerHTML = renderPlan(data.plan_data); // Use the new renderer
                     loadSavedPlans();
                 } else {
-                    planOutput.innerHTML = '<div class="error">' + (data.error || 'Failed to generate plan.') + '</div>';
+                    planOutput.innerHTML = '<div class="message error">' + (data.message || 'Failed to generate plan.') + '</div>';
                 }
             })
             .catch(() => {
-                planOutput.innerHTML = '<div class="error">Error contacting server.</div>';
+                planOutput.innerHTML = '<div class="message error">Error contacting server.</div>';
             });
         });
+
+        function renderPlan(planData) {
+            const dailyBreakdownHtml = planData.daily_breakdown.map(day => {
+                const tasksHtml = day.tasks.map(task => `<li>${task.task} (${task.estimated_time})</li>`).join('');
+                return `
+                    <div class="plan-view-day">
+                        <h3>${day.focus} (Day ${day.day} - ${day.date})</h3>
+                        <ul>${tasksHtml}</ul>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="message success">Plan generated successfully!</div>
+                <div class="plan-view">
+                    <h2>${planData.goal}</h2>
+                    <p><em>${planData.overview}</em></p>
+                    <p><strong>Estimated Duration:</strong> ${planData.estimated_duration}</p>
+                    <hr style="margin: 20px 0;">
+                    ${dailyBreakdownHtml}
+                </div>
+            `;
+        }
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
             const d = new Date(dateStr);
-            if (isNaN(d)) return '';
-            return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+            return isNaN(d) ? '' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         }
 
         function loadSavedPlans() {
@@ -460,41 +140,21 @@
                             plansList.innerHTML = '<em>No saved plans yet.</em>';
                         } else {
                             plansList.innerHTML = data.plans.map(p =>
-                                `<div class="plan-card" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;padding:20px;margin-bottom:16px;">
-                                    <div class="plan-title" style="font-weight:600;color:#495057;margin-bottom:8px;">${p.goal}</div>
-                                    <div class="plan-meta" style="color:#6c757d;font-size:14px;margin-bottom:12px;">
-                                        ${formatDate(p.created_at)}${p.id ? ` | ID: ${p.id}` : ''}
-                                    </div>
-                                    <div class="plan-actions" style="display:flex;gap:10px;">
-                                        <button class="btn btn-small btn-secondary" onclick="alert('View not implemented in minimal UI')">View</button>
-                                        <button class="btn btn-small btn-danger" onclick="deletePlan(${p.id})">Delete</button>
-                                    </div>
+                                `<div class="plan-card">
+                                    <div class="plan-title">${p.goal}</div>
+                                    <div class="plan-meta">${formatDate(p.created_at)}${p.id ? ` | ID: ${p.id}` : ''}</div>
                                 </div>`
                             ).join('');
                         }
                     } else {
-                        plansList.innerHTML = '<div class="error">Failed to load saved plans.</div>';
+                        plansList.innerHTML = '<div class="message error">Failed to load saved plans.</div>';
                     }
                 })
                 .catch(() => {
-                    plansList.innerHTML = '<div class="error">Error loading saved plans.</div>';
+                    plansList.innerHTML = '<div class="message error">Error loading saved plans.</div>';
                 });
         }
-
-        window.deletePlan = function(planId) {
-            if (!confirm('Are you sure you want to delete this plan?')) return;
-            fetch(`/plans/${planId}`, { method: 'DELETE' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.success) {
-                        loadSavedPlans();
-                    } else {
-                        alert('Failed to delete plan.');
-                    }
-                })
-                .catch(() => alert('Error deleting plan.'));
-        };
     });
-    </script>
+</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-  "startCommand": "gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT",
+    "startCommand": "gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT --timeout 120",
     "restartPolicyType": "ON_FAILURE"
   }
 }

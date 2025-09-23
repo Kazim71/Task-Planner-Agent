@@ -14,10 +14,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# Read and sanitize DATABASE_URL
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is missing. Please set it in your deployment environment (e.g., Railway dashboard). Example: postgresql://user:password@host:port/dbname")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./task_planner.db")
 
 # Remove any accidental quotes or psql prefix
 DATABASE_URL = DATABASE_URL.strip().replace("psql ", "")
