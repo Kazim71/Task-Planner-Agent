@@ -155,39 +155,87 @@ graph TB
     Q --> G
 ```
 
-## Tech Stack
-Backend: Python, FastAPI, Uvicorn, Gunicorn
-AI: Google Gemini
-Database: SQLAlchemy ORM, SQLite (local), PostgreSQL (prod)
-Frontend: HTML, CSS, Jinja2, Vanilla JavaScript
-Deployment: Railway (auto-deploy from GitHub)
-External APIs: Tavily (search), OpenWeatherMap (weather)
+##  Technology Stack
+
+- **Backend:** Python 3.12.10
+- **Framework:** Flask (API compatible with FastAPI)
+- **AI:** Google Gemini AI API
+- **Deployment:** Railway (asia-southeast1 region)
+- **WSGI Server:** Gunicorn with Uvicorn workers
+- **Process Management:** Procfile
 
 
-## Local Setup
-Prerequisites: Python 3.10+, Git
 
-### 1. Clone
-git clone https://github.com/YourUsername/Task-Planner-Agent.git
-cd Task-Planner-Agent
+## 🛠️ Setup Instructions
 
-### 2. Create & activate virtual env
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd task-planner-agent
+```
+
+### 2. Create Virtual Environment
+
+```bash
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate   # macOS/Linux
-[Activate.ps1](http://_vscodecontentref_/0) # Windows
 
-### 3. Install dependencies
-pip install -r [requirements.txt](http://_vscodecontentref_/1)
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+```
 
-### 4. Environment variables (.env)
-GEMINI_API_KEY="your_key"
-TAVILY_API_KEY="your_key"
-OPENWEATHER_API_KEY="your_key"
+### 3. Install Dependencies
 
-### 5. Run locally
-uvicorn main:app --reload
+```bash
+pip install -r requirements.txt
+```
 
-Runs at: http://localhost:8000
+### 4. Environment Configuration
+
+Create a `.env` file in the project root:
+
+```env
+# Required API Keys
+GEMINI_API_KEY=your_gemini_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+OPENWEATHER_API_KEY=your_openweather_api_key_here
+
+# Optional Configuration
+DATABASE_URL=sqlite:///./task_planner.db
+HOST=0.0.0.0
+PORT=8000
+```
+
+### 5. Get API Keys
+
+#### Google Gemini API
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Create a new API key
+4. Copy the key to your `.env` file
+
+#### Tavily API (Web Search)
+1. Visit [Tavily](https://tavily.com/)
+2. Sign up for an account
+3. Get your API key from the dashboard
+4. Copy the key to your `.env` file
+
+#### OpenWeatherMap API (Weather)
+1. Visit [OpenWeatherMap](https://openweathermap.org/api)
+2. Sign up for a free account
+3. Generate an API key
+4. Copy the key to your `.env` file
+
+### 6. Run the Application
+
+```bash
+python main.py
+```
+The application will be available at `http://localhost:8000`
 
 ## AI Usage Disclosure
 This project was developed with help from GitHub Copilot and other AI tools for:
